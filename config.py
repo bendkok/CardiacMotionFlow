@@ -2,7 +2,7 @@
 
 
 # Directory of the project
-code_dir = '/home/qzheng/Programs/tensorflow/my_models/CardiacMotionFlow'
+code_dir = 'C:/Users/benda/Documents/Jobb_Simula/CardiacMotionFlow'
 
 
 excluded_slice_ratio = 0.2
@@ -10,7 +10,8 @@ excluded_slice_ratio = 0.2
 
 
 # For the ACDC data 
-acdc_data_dir = '/data/asclepios/user/qzheng/Data/MICCAI2017_ACDC_Challenge2/{}'
+# acdc_data_dir = 'C:/Users/benda/Documents/Jobb_Simula/MAD_motion/CINE_MRI_sorted/{}'
+acdc_data_dir = 'C:/Users/benda/Documents/Jobb_Simula/CardiacMotionFlow/acdc_info/acdc_data/{}'
 
 acdc_dilated_subjects = ['patient{}'.format(str(x).zfill(3)) for x in range(1, 21)]
 acdc_hypertrophic_subjects = ['patient{}'.format(str(x).zfill(3)) for x in range(21, 41)]
@@ -27,7 +28,8 @@ acdc_seq_instants = 10
 roi_net_initial_lr = 1e-4
 roi_net_decay_rate = 1.0
 roi_net_batch_size = 16
-roi_net_input_img_size = 128
+# roi_net_input_img_size = 128
+roi_net_input_img_size = 256
 roi_net_epochs = 50
 
 

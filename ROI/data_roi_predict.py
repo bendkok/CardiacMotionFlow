@@ -22,7 +22,6 @@ def data_roi_predict():
 
     
     
-    
     predict_img_list = []
     predict_gt_list = []
 
@@ -63,5 +62,7 @@ def data_roi_predict():
 
 
 
+if __name__ == '__main__':
+    data_roi_predict()
 
 

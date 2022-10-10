@@ -34,7 +34,7 @@ from keras.layers.merge import (
     Add,
     Concatenate
 )
-from keras.layers.normalization import BatchNormalization
+from tensorflow.keras.layers import BatchNormalization
 from keras.layers.core import (
     Lambda,
     Reshape
@@ -4404,7 +4404,7 @@ def handle_dim_ordering():
     global ROW_AXIS
     global COL_AXIS
     global CHANNEL_AXIS
-    if K.image_dim_ordering() == 'tf':
+    if K.image_data_format() == 'channels_last':
         ROW_AXIS = 1
         COL_AXIS = 2
         CHANNEL_AXIS = 3
@@ -4415,7 +4415,7 @@ def handle_dim_ordering():
 
 def handle_dim_ordering2():
     global CHANNEL_AXIS
-    if K.image_dim_ordering() == 'tf':
+    if K.image_data_format() == 'channels_last':
         CHANNEL_AXIS = 2
     else:
         CHANNEL_AXIS = 1

@@ -6,14 +6,18 @@ sys.path.append('..')
 import os
 import copy
 import numpy as np
-from itertools import izip
-from scipy.misc import imresize
+try:
+    from itertools import izip as zip
+except ImportError: # will be 3.x series
+    pass
+
+# from scipy.misc import imresize
 from PIL import Image as pil_image
 import tensorflow as tf
 
 from keras.models import Model
-from keras.optimizers import Adam
-from keras.utils import plot_model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.utils import plot_model
 from keras import backend as K
 
 K.set_image_data_format('channels_last')  # TF dimension ordering in this code
@@ -50,7 +54,7 @@ def predict_lvrv_net():
 
     code_path = config.code_dir
     
-    fold = int(sys.argv[1])
+    fold = 0 #int(sys.argv[1])
     print('fold = {}'.format(fold))
     if fold == 0:
         mode = 'predict'
@@ -197,7 +201,7 @@ def predict_lvrv_net():
 
 
         # Combine generators into one which yields image and masks
-        predict_generator = izip(image_context_generator, image_generator, mask_context_generator)
+        predict_generator = zip(image_context_generator, image_generator, mask_context_generator)
 
         
         img_size = pil_image.open(imgs[0]).size
@@ -214,7 +218,8 @@ def predict_lvrv_net():
             masks = np.reshape(masks, newshape=(input_img_size, input_img_size, 4))
             masks_resized = np.zeros((size, size, 4))
             for c in range(4):
-                masks_resized[:, :, c] = imresize(masks[:, :, c], (size, size), interp='bilinear')
+                # masks_resized[:, :, c] = imresize(masks[:, :, c], (size, size), interp='bilinear')
+                masks_resized[:, :, c] = np.array(pil_image.fromarray(masks[:, :, c]).resize(size=(size, size), resample=2)) #changed this because the old verison was depricated. might not do exactly the same
             prediction_resized = np.argmax(masks_resized, axis=-1)
             prediction_resized = np.reshape(prediction_resized, newshape=(size, size, 1))
 
@@ -245,7 +250,8 @@ def predict_lvrv_net():
             # save txt file
             prediction_path = segs[j]   
             prediction_txt_path = prediction_path.replace('.png', '.txt', 1)
-            np.savetxt(prediction_txt_path, prediction_resized, fmt='%.6f')
+            # np.savetxt(prediction_txt_path, prediction_resized, fmt='%.6f')
+            np.savetxt(prediction_txt_path, prediction_resized.reshape((prediction_resized.shape[0],-1)), fmt='%.6f') #hope this is fine
 
             # save image
             prediction_img = array_to_img(prediction_resized * 50.0,

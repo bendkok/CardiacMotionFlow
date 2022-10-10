@@ -7,6 +7,7 @@ import scipy
 import math
 from PIL import Image as pil_image
 import tensorflow as tf
+import re
 
 from keras.models import (
     Model,
@@ -26,11 +27,12 @@ from image2 import (
     array_to_img,
     ImageDataGenerator2
 )
-from ROI.data_roi_predict import data_roi_predict
+from ROI.data_mesa_roi_predict import data_mesa_roi_predict
 
 from ROI.module_roi_net import net_module
 
 import config
+import pydicom
 
 
 
@@ -55,11 +57,12 @@ def predict_roi_net():
 
     ######
     # Data
-    predict_img_list, predict_gt_list = data_roi_predict()
+    predict_img_list, predict_gt_list, subject_dir_list = data_mesa_roi_predict()
     
 
     predict_img_list = sorted(predict_img_list)
     predict_gt_list = sorted(predict_gt_list)
+    subject_dir_list = sorted(subject_dir_list)
 
     predict_sample = len(predict_img_list)
 
@@ -131,9 +134,16 @@ def predict_roi_net():
         for j in range(len(img_list_batch)):
             img_path = img_list_batch[j]
             #print(img_path)
-            img_size = pil_image.open(img_path).size
-            h = img_size[0]
-            w = img_size[1]
+            # img_size = pil_image.open(img_path).size
+            
+            subject_data = pydicom.read_file(img_path) 
+            instants = subject_data.CardiacNumberOfImages
+            # print(type(subject_data))
+            # exit
+            
+            #todo: change
+            h = subject_data.Rows #img_size[0]
+            w = subject_data.Columns #img_size[1]
             size = max(h, w)
 
             # reshape and crop the predicted mask to the original size
@@ -143,11 +153,11 @@ def predict_roi_net():
             cropped_resized_mask = resized_mask[((size-w)//2):((size-w)//2 + w), 
                                                 ((size-h)//2):((size-h)//2 + h)]
             cropped_resized_mask = np.reshape(cropped_resized_mask, newshape=(w, h, 1))
-
-            predicted_mask_path = img_path.replace('original_2D', 'mask_original_2D', 2)
+            
+            predicted_mask_path = re.sub("(MES0\d{6}).*(\d{3}_sliceloc.*)", '\g<1>/mask_original_2D/\g<2>', img_path)
 
             # save txt file
-            predicted_mask_txt_path = predicted_mask_path.replace('.png', '.txt', 1)
+            predicted_mask_txt_path = predicted_mask_path + '.txt'
        
             # np.savetxt(predicted_mask_txt_path, cropped_resized_mask, fmt='%.6f')
             np.savetxt(predicted_mask_txt_path, cropped_resized_mask.reshape((cropped_resized_mask.shape[0],-1)), fmt='%.6f') #hope this is fine
@@ -156,7 +166,7 @@ def predict_roi_net():
             cropped_resized_mask_img = array_to_img(cropped_resized_mask,
                                                     data_format=None, 
                                                     scale=True)
-            cropped_resized_mask_img.save(predicted_mask_path)
+            cropped_resized_mask_img.save(predicted_mask_path + '.png')
 
 
 

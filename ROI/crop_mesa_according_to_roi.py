@@ -13,9 +13,11 @@ from PIL import Image
 
 import multiprocessing.pool
 from functools import partial
-
 import pydicom
+
 import config
+
+from data_mesa_roi_predict import data_mesa_roi_predict
 
 
 # Auxiliary function
@@ -80,19 +82,22 @@ def crop_according_to_roi():
 
 
 
-    data_dir = config.acdc_data_dir
+    data_dir = "C:\\Users\\benda\\Documents\\Jobb_Simula\\MAD_motion\\MESA_set1_sorted\\{}" #config.acdc_data_dir
     code_dir = config.code_dir
+    
+    predict_img_list, predict_gt_list, subject_dir_list = data_mesa_roi_predict()
 
-    dilated_subjects = config.acdc_dilated_subjects
-    hypertrophic_subjects = config.acdc_hypertrophic_subjects
-    infarct_subjects = config.acdc_infarct_subjects 
-    normal_subjects = config.acdc_normal_subjects
-    rv_subjects = config.acdc_rv_subjects
-    test_subjects = config.acdc_test_subjects
+    # dilated_subjects = config.acdc_dilated_subjects
+    # hypertrophic_subjects = config.acdc_hypertrophic_subjects
+    # infarct_subjects = config.acdc_infarct_subjects 
+    # normal_subjects = config.acdc_normal_subjects
+    # rv_subjects = config.acdc_rv_subjects
+    # test_subjects = config.acdc_test_subjects
 
-    train_subjects = dilated_subjects + hypertrophic_subjects + infarct_subjects + normal_subjects + rv_subjects
+    #we have 100 subject so far, for now I'm setting all of them to be training set
+    train_subjects = ['MES00{}01'.format(str(x).zfill(3)) for x in range(100)] # dilated_subjects + hypertrophic_subjects + infarct_subjects + normal_subjects + rv_subjects
 
-    all_subjects = train_subjects + test_subjects
+    all_subjects = train_subjects #+ test_subjects
 
 
 
@@ -111,16 +116,19 @@ def crop_according_to_roi():
     for subject in all_subjects:
         print(subject)
         subject_dir = data_dir.format(subject)
+        subject_dir_frames = os.listdir(subject_dir)
         subject_mask_original_dir = os.path.join(subject_dir, 'mask_original_2D')
         crop_2D_path = os.path.join(subject_dir, 'crop_2D')
         if not os.path.exists(crop_2D_path):
             os.makedirs(crop_2D_path)
         
+        subject_data = pydicom.read_file(os.path.join(subject_dir, subject_dir_frames[0]))
         
-        instants = int([x for x in subject_info if x[0] == subject][0][2])
-        ed_instant = int([x for x in subject_info if x[0] == subject][0][3])
-        es_instant = int([x for x in subject_info if x[0] == subject][0][4])
-        slices = int([x for x in subject_info if x[0] == subject][0][5])
+        instants = subject_data.CardiacNumberOfImages #int([x for x in subject_info if x[0] == subject][0][2])
+        #for now I've just set ed/esto be the first and last frames. Don't think that's the best option
+        ed_instant = 0 # int([x for x in subject_info if x[0] == subject][0][3])
+        es_instant = len(subject_dir_frames) -1  # int([x for x in subject_info if x[0] == subject][0][4])
+        slices = int(len(subject_dir_frames)/20) #int([x for x in subject_info if x[0] == subject][0][5])
 
         used_instants_roi = [ed_instant]
         img_path_list = []

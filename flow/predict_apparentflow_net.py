@@ -8,13 +8,16 @@ import copy
 import math
 import numpy as np
 from PIL import Image as pil_image
-from scipy.misc import imresize
-from itertools import izip
+# from scipy.misc import imresize
+try:
+    from itertools import izip as zip
+except ImportError: # will be 3.x series
+    pass
 import tensorflow as tf
 
 from keras.models import Model
-from keras.optimizers import Adam
-from keras.utils import plot_model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.utils import plot_model
 from keras import backend as K
 
 K.set_image_data_format('channels_last')  # TF dimension ordering in this code
@@ -45,7 +48,7 @@ def predict_apparentflow_net():
 
     code_path = config.code_dir
     
-    fold = int(sys.argv[1])
+    fold = 0 #int(sys.argv[1])
     print('fold = {}'.format(fold))
     if fold == 0:
         mode = 'predict'
@@ -160,7 +163,7 @@ def predict_apparentflow_net():
         generators.append(seg_generator)
 
     # Combine generators into one which yields image and masks
-    predict_generator = izip(*tuple(generators))
+    predict_generator = zip(*tuple(generators))
 
 
     ###############
@@ -200,7 +203,8 @@ def predict_apparentflow_net():
 
             path = paths[i]
             warped_seg_resized2 = np.zeros((original_size, original_size, 1))
-            warped_seg_resized2[:, :, 0] = imresize(warped_seg2[i, :, :, 0], (original_size, original_size), interp = 'nearest', mode = 'F') 
+            # warped_seg_resized2[:, :, 0] = imresize(warped_seg2[i, :, :, 0], (original_size, original_size), interp = 'nearest', mode = 'F') 
+            warped_seg_resized2[:, :, 0] = np.array(pil_image.fromarray(warped_seg2[i, :, :, 0], mode = 'F').resize(size=(original_size, original_size), resample = 0)) #hope this is fine, and that mode is the same
 
             warped_seg_resized2 = np.rint(warped_seg_resized2)
             warped_save_path2 = path.replace('/crop_2D/', '/predict_2D/', 1)

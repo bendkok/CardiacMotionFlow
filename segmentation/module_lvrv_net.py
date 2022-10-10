@@ -43,9 +43,17 @@ def net_module(input_shape, num_outputs):
     if len(input_shape) != 3:
         raise Exception("Input shape should be a tuple (nb_rows, nb_cols, nb_channels)")
 
+    """
     # Permute dimension order if necessary
     if K.image_dim_ordering() != 'tf':
         input_shape = (input_shape[2], input_shape[0], input_shape[1])
+    """
+    
+    # Permute dimension order if necessary
+    if K.image_data_format() != 'channels_last':
+        print("image_data_format ", K.image_data_format())
+        input_shape = (input_shape[2], input_shape[0], input_shape[1])
+
 
     input_img0 = Input(shape=input_shape, name="input_img0")
 

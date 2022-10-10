@@ -29,6 +29,7 @@ def download_weights():
     urltool.urlretrieve(lvrv_net_source, lvrv_net_destination)
 
     for f in range(0, 6):
+        print("LVRV-net: {}".format(f))
         lvrv_net_source = 'http://www-sop.inria.fr/members/Qiao.Zheng/CardiacMotionFlow/segmentation/model_lvrv_net_finetune_fold{}_epoch1000.h5'.format(f)
         lvrv_net_destination = os.path.join(code_dir, 'segmentation', 'model_lvrv_net_finetune_fold{}_epoch1000.h5'.format(f))
         urltool.urlretrieve(lvrv_net_source, lvrv_net_destination)
@@ -37,6 +38,7 @@ def download_weights():
     # ApparentFlow-net
     print("Downloading pretrained ApparentFlow-net")
     for f in range(0, 6):
+        print("ApparentFlow-net: {}".format(f))        
         apparentflow_net_source = 'http://www-sop.inria.fr/members/Qiao.Zheng/CardiacMotionFlow/flow/model_apparentflow_net_fold{}_epoch050.h5'.format(f)
         apparentflow_net_destination = os.path.join(code_dir, 'flow', 'model_apparentflow_net_fold{}_epoch050.h5'.format(f))
         urltool.urlretrieve(apparentflow_net_source, apparentflow_net_destination)

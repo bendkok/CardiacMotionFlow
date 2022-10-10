@@ -17,6 +17,8 @@ import warnings
 import multiprocessing.pool
 from functools import partial
 
+import pydicom
+
 from keras import backend as K
 
 try:
@@ -1351,9 +1353,18 @@ class PathListIterator(Iterator):
                     x = np.reshape(x, self.image_shape)
                 else:
                     x = np.zeros(self.image_shape)
+            elif fname[-2:] in ['.0']:
+                # print('\nfname: ', fname)
+                if os.path.isfile(fname):
+                    x = pydicom.read_file(fname).pixel_array
+                    x = np.reshape(x, self.image_shape)
+                    # print(x.pixel_array)
+                    # exit()
 
             x = self.image_data_generator2.random_transform(x)
             x = self.image_data_generator2.standardize(x)
+            # print(batch_x[i].shape, x.shape)
+            # exit()
             batch_x[i] = x
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir and ((self.batch_count % self.save_period) == 0):
