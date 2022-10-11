@@ -8,6 +8,7 @@ import math
 from PIL import Image as pil_image
 import tensorflow as tf
 import re
+import regex
 
 from keras.models import (
     Model,
@@ -36,7 +37,7 @@ import pydicom
 
 
 
-def predict_roi_net():
+def predict_roi_net(use_info_file=True):
 
     code_path = config.code_dir
 
@@ -57,8 +58,8 @@ def predict_roi_net():
 
     ######
     # Data
-    predict_img_list, predict_gt_list, subject_dir_list = data_mesa_roi_predict(False)
-    # predict_img_list, predict_gt_list, subject_dir_list = data_mesa_roi_predict()
+    predict_img_list, predict_gt_list, subject_dir_list = data_mesa_roi_predict(use_info_file, True)
+    # predict_img_list, predict_gt_list, subject_dir_list = data_mesa_roi_predict(False)
     
 
     predict_img_list = sorted(predict_img_list)
@@ -152,8 +153,10 @@ def predict_roi_net():
                                                 ((size-h)//2):((size-h)//2 + h)]
             cropped_resized_mask = np.reshape(cropped_resized_mask, newshape=(w, h, 1))
             
-            predicted_mask_path = re.sub("MESA_set1_sorted/(MES0\d{6}).*(\d{1,3}_sliceloc.*)", 'MESA_mask_original_2D/\g<1>/\g<2>', img_path)
+            # print(img_path)
+            predicted_mask_path = re.sub("MESA_set1_sorted/(MES0\d{6}).*\\\\([0-9]{1,3}_)(sliceloc.*)", 'MESA_mask_original_2D/\g<1>/\g<2>mask_\g<3>', img_path)
             # print(predicted_mask_path)
+            # print()
 
             # save txt file
             predicted_mask_txt_path = predicted_mask_path + '.txt'

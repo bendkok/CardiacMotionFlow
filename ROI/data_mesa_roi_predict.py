@@ -7,9 +7,10 @@ import os
 import pydicom
 import pandas as pd
 import numpy as np
+import shutil as shu
 
 
-def data_mesa_roi_predict(use_info_file=True):
+def data_mesa_roi_predict(use_info_file=True, delete=False):
     data_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA_set1_sorted/{}" #config.acdc_data_dir
     out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/" 
 
@@ -18,6 +19,10 @@ def data_mesa_roi_predict(use_info_file=True):
     predict_gt_list = []
     subject_dir_list = []
     skipped = 0
+    
+    if delete:
+        #clears the output folder incase any stray/old files are there
+        shu.rmtree(os.path.join(out_dir, 'MESA_mask_original_2D'))
     
     #we can either use a file with info on the different paitients, or we can auto-parse the directory
     if not use_info_file:        
@@ -84,6 +89,8 @@ def data_mesa_roi_predict(use_info_file=True):
         subject_predict_dir = os.path.join(out_dir, 'MESA_mask_original_2D', subject)
         if not os.path.exists(subject_predict_dir):
             os.makedirs(subject_predict_dir)
+        
+        
             
         #a list with all the frames for this patient
         all_frames = os.listdir(original_2D_path)
@@ -122,14 +129,14 @@ def data_mesa_roi_predict(use_info_file=True):
 
 
 if __name__ == '__main__':
-    out = data_mesa_roi_predict(False)
+    # out = data_mesa_roi_predict(False)
     # print(out)
-    for o in out[0]:
-        print(o)
+    # for o in out[0]:
+    #     print(o)
         
     out = data_mesa_roi_predict(True)
-    # print(out)
-    for o in out[0]:
-        print(o)
+    # # print(out)
+    # for o in out[0]:
+    #     print(o)
 
 
