@@ -58,6 +58,7 @@ def predict_roi_net():
     ######
     # Data
     predict_img_list, predict_gt_list, subject_dir_list = data_mesa_roi_predict(False)
+    # predict_img_list, predict_gt_list, subject_dir_list = data_mesa_roi_predict()
     
 
     predict_img_list = sorted(predict_img_list)
@@ -136,12 +137,9 @@ def predict_roi_net():
             #print(img_path)
             # img_size = pil_image.open(img_path).size
             
-            subject_data = pydicom.read_file(img_path) 
-            instants = subject_data.CardiacNumberOfImages
-            # print(type(subject_data))
-            # exit
+            subject_data = pydicom.read_file(img_path, force=True) 
+            # instants = subject_data.CardiacNumberOfImages
             
-            #todo: change
             h = subject_data.Rows #img_size[0]
             w = subject_data.Columns #img_size[1]
             size = max(h, w)
@@ -154,13 +152,12 @@ def predict_roi_net():
                                                 ((size-h)//2):((size-h)//2 + h)]
             cropped_resized_mask = np.reshape(cropped_resized_mask, newshape=(w, h, 1))
             
-            predicted_mask_path = re.sub("MESA_set1_sorted/(MES0\d{6}).*(\d{3}_sliceloc.*)", 'MESA_mask_original_2D/\g<1>/\g<2>', img_path)
+            predicted_mask_path = re.sub("MESA_set1_sorted/(MES0\d{6}).*(\d{1,3}_sliceloc.*)", 'MESA_mask_original_2D/\g<1>/\g<2>', img_path)
             # print(predicted_mask_path)
 
             # save txt file
             predicted_mask_txt_path = predicted_mask_path + '.txt'
-       
-            # np.savetxt(predicted_mask_txt_path, cropped_resized_mask, fmt='%.6f')
+            # print(predicted_mask_txt_path)
             np.savetxt(predicted_mask_txt_path, cropped_resized_mask.reshape((cropped_resized_mask.shape[0],-1)), fmt='%.6f') #hope this is fine
 
             # save image

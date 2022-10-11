@@ -10,8 +10,8 @@ import numpy as np
 
 
 def data_mesa_roi_predict(use_info_file=True):
-    data_dir = "C:\\Users\\benda\\Documents\\Jobb_Simula\\MAD_motion\\MESA_set1_sorted\\{}" #config.acdc_data_dir
-    out_dir = "C:\\Users\\benda\\Documents\\Jobb_Simula\\MAD_motion\\" 
+    data_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA_set1_sorted/{}" #config.acdc_data_dir
+    out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/" 
 
     
     predict_img_list = []
@@ -55,8 +55,8 @@ def data_mesa_roi_predict(use_info_file=True):
                 original_2D_path = os.path.join(subject_dir, 'short_axis_cine_(multi-slice')
             elif os.path.exists(os.path.join(subject_dir, 'short_axis_tag_90') ):
                 original_2D_path = os.path.join(subject_dir, 'short_axis_tag_90')
-            elif os.path.exists(os.path.join(subject_dir, 'derived-primary-other\\short_axis_(10_slices)') ):
-                original_2D_path = os.path.join(subject_dir, 'derived-primary-other\\short_axis_(10_slices)')
+            elif os.path.exists(os.path.join(subject_dir, 'derived-primary-other/short_axis_(10_slices)') ):
+                original_2D_path = os.path.join(subject_dir, 'derived-primary-other/short_axis_(10_slices)')
             else: 
                 print("Warning! No short-axis scan found for subject {}.".format(subject))
                 skipped += 1
@@ -113,16 +113,23 @@ def data_mesa_roi_predict(use_info_file=True):
     predict_gt_list = ['']*len(predict_img_list) #this needs to be included
     print('\npredict_image_count = {}. '.format(len(predict_img_list)) )
     print(f"Skipped patients = {skipped}.\n")
-    # print(predict_img_list, predict_gt_list, subject_dir_list)
+    # print(predict_img_list)
+    # print(predict_gt_list)
+    # print(subject_dir_list)
 
     return predict_img_list, predict_gt_list, subject_dir_list
 
 
 
 if __name__ == '__main__':
+    out = data_mesa_roi_predict(False)
+    # print(out)
+    for o in out[0]:
+        print(o)
+        
     out = data_mesa_roi_predict(True)
     # print(out)
-    # for o in out[0]:
-        # print(o)
+    for o in out[0]:
+        print(o)
 
 
