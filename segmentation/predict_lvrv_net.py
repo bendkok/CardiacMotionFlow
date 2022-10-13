@@ -19,6 +19,8 @@ from keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import plot_model
 from keras import backend as K
+from tqdm import tqdm
+# import tqdm
 
 K.set_image_data_format('channels_last')  # TF dimension ordering in this code
 
@@ -43,14 +45,38 @@ from image2 import (
 )
 
 from data_lvrv_segmentation_propagation_acdc import data_lvrv_segmentation_propagation_acdc
+from data_mesa_lvrv_segmentation_propagation_acdc import data_mesa_lvrv_segmentation_propagation_acdc
 
 from module_lvrv_net import net_module
 
 import config
 
+import contextlib
+import inspect
+
+#source: https://stackoverflow.com/a/37243211/15147410
+class DummyFile(object):
+    file = None
+    def __init__(self, file):
+        self.file = file
+
+    def write(self, x):
+        # Avoid print() second call (useless \n)
+        if len(x.rstrip()) > 0:
+            tqdm.write(x, file=self.file)
+            
+    def flush(self):
+        pass
+
+@contextlib.contextmanager
+def nostdout():
+    save_stdout = sys.stdout
+    sys.stdout = DummyFile(sys.stdout)
+    yield
+    sys.stdout = save_stdout
 
 
-def predict_lvrv_net():
+def predict_lvrv_net(dataset = 'acdc'):
 
     code_path = config.code_dir
     
@@ -82,8 +108,13 @@ def predict_lvrv_net():
 
     print('This model has {} parameters'.format(model.count_params()) )
 
-
-    seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_lvrv_segmentation_propagation_acdc(mode = mode, fold = fold)
+    if dataset == 'acdc':
+        seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_lvrv_segmentation_propagation_acdc(mode = mode, fold = fold)
+    elif dataset == 'mesa':
+        seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_mesa_lvrv_segmentation_propagation_acdc(mode = mode, fold = fold)
+    else:
+        print("Unkown dataset.")
+        raise 
     
 
 
@@ -132,133 +163,134 @@ def predict_lvrv_net():
     print('There will be {} sequences'.format(predict_sequence) )
 
     
-    for i in range(predict_sequence):
-        print('Sequence # {}'.format(i) )
-
-        # The lists fot the sequence
-        context_imgs = seq_context_imgs[i]
-        context_segs = seq_context_segs[i]
-        imgs = seq_imgs[i]
-        segs = seq_segs[i]
-
-
-        image_context_generator = image_context_datagen.flow_from_path_list(
-            path_list=context_imgs,
-            target_size=(input_img_size, input_img_size), 
-            pad_to_square=True,
-            resize_mode='nearest', 
-            histogram_based_preprocessing=False,
-            clahe=False,
-            color_mode='grayscale',
-            class_list=None,
-            class_mode=None,
-            batch_size=batch_size,
-            shuffle=False,
-            seed=seed,
-            save_to_dir=None,
-            save_prefix='',
-            save_format='png',
-            save_period=500,
-            follow_links=False)
-
-        image_generator = image_datagen.flow_from_path_list(
-            path_list=imgs,
-            target_size=(input_img_size, input_img_size), 
-            pad_to_square=True,
-            resize_mode='nearest', 
-            histogram_based_preprocessing=False,
-            clahe=False,
-            color_mode='grayscale',
-            class_list=None,
-            class_mode=None,
-            batch_size=batch_size,
-            shuffle=False,
-            seed=seed,
-            save_to_dir=None,
-            save_prefix='',
-            save_format='png',
-            save_period=500,
-            follow_links=False)
-
-        mask_context_generator = mask_context_datagen.flow_from_path_list(
-            path_list=context_segs,
-            target_size=(input_img_size, input_img_size), 
-            pad_to_square=True,
-            resize_mode='nearest', 
-            histogram_based_preprocessing=False,
-            clahe=False,
-            color_mode='grayscale',
-            class_list=None,
-            class_mode=None,
-            batch_size=batch_size,
-            shuffle=False,
-            seed=seed,
-            save_to_dir=None,
-            save_prefix='',
-            save_format='png',
-            save_period=500,
-            follow_links=False)
-
-
-        # Combine generators into one which yields image and masks
-        predict_generator = zip(image_context_generator, image_generator, mask_context_generator)
-
-        
-        img_size = pil_image.open(imgs[0]).size
-        size = img_size[0]
-
-        
-
-        for j in range(len(imgs)):
+    for i in tqdm(range(predict_sequence), file=sys.stdout):
+        with nostdout():
+            print('Sequence # {}'.format(i) )
+    
+            # The lists fot the sequence
+            context_imgs = seq_context_imgs[i]
+            context_segs = seq_context_segs[i]
+            imgs = seq_imgs[i]
+            segs = seq_segs[i]
+    
+    
+            image_context_generator = image_context_datagen.flow_from_path_list(
+                path_list=context_imgs,
+                target_size=(input_img_size, input_img_size), 
+                pad_to_square=True,
+                resize_mode='nearest', 
+                histogram_based_preprocessing=False,
+                clahe=False,
+                color_mode='grayscale',
+                class_list=None,
+                class_mode=None,
+                batch_size=batch_size,
+                shuffle=False,
+                seed=seed,
+                save_to_dir=None,
+                save_prefix='',
+                save_format='png',
+                save_period=500,
+                follow_links=False)
+    
+            image_generator = image_datagen.flow_from_path_list(
+                path_list=imgs,
+                target_size=(input_img_size, input_img_size), 
+                pad_to_square=True,
+                resize_mode='nearest', 
+                histogram_based_preprocessing=False,
+                clahe=False,
+                color_mode='grayscale',
+                class_list=None,
+                class_mode=None,
+                batch_size=batch_size,
+                shuffle=False,
+                seed=seed,
+                save_to_dir=None,
+                save_prefix='',
+                save_format='png',
+                save_period=500,
+                follow_links=False)
+    
+            mask_context_generator = mask_context_datagen.flow_from_path_list(
+                path_list=context_segs,
+                target_size=(input_img_size, input_img_size), 
+                pad_to_square=True,
+                resize_mode='nearest', 
+                histogram_based_preprocessing=False,
+                clahe=False,
+                color_mode='grayscale',
+                class_list=None,
+                class_mode=None,
+                batch_size=batch_size,
+                shuffle=False,
+                seed=seed,
+                save_to_dir=None,
+                save_prefix='',
+                save_format='png',
+                save_period=500,
+                follow_links=False)
+    
+    
+            # Combine generators into one which yields image and masks
+            predict_generator = zip(image_context_generator, image_generator, mask_context_generator)
+    
             
-            img_context, img, mask_context = next(predict_generator)
-            masks = model.predict([img_context, img, mask_context], 
-                batch_size=batch_size, verbose=0)
-
-            masks = np.reshape(masks, newshape=(input_img_size, input_img_size, 4))
-            masks_resized = np.zeros((size, size, 4))
-            for c in range(4):
-                # masks_resized[:, :, c] = imresize(masks[:, :, c], (size, size), interp='bilinear')
-                masks_resized[:, :, c] = np.array(pil_image.fromarray(masks[:, :, c]).resize(size=(size, size), resample=2)) #changed this because the old verison was depricated. might not do exactly the same
-            prediction_resized = np.argmax(masks_resized, axis=-1)
-            prediction_resized = np.reshape(prediction_resized, newshape=(size, size, 1))
-
-            # Check whether the prediction is successful
-            have_lvc = (1 in prediction_resized)
-            have_lvm = (2 in prediction_resized)
-            lvc_touch_background_length = touch_length_count(prediction_resized, size, size, 1, 0)
-            lvc_touch_lvm_length = touch_length_count(prediction_resized, size, size, 1, 2)
-            lvc_touch_rvc_length = touch_length_count(prediction_resized, size, size, 1, 3)
-
-            lvc_second_largest_component_count = second_largest_component_count(prediction_resized, 1)
-            lvm_second_largest_component_count = second_largest_component_count(prediction_resized, 2)
-            rvc_second_largest_component_count = second_largest_component_count(prediction_resized, 3)
-
+            img_size = pil_image.open(imgs[0]).size
+            size = img_size[0]
+    
             
-            success = have_lvm and \
-                ((lvc_touch_background_length + lvc_touch_rvc_length) <= 0.5 * lvc_touch_lvm_length)
-
-
-            
-            if not success:
-                prediction_resized = 0 * prediction_resized
-                print('Unsuccessful segmentation for {}'.format(imgs[j]))
-            else:
-                prediction_resized = keep_largest_components(prediction_resized, keep_values=[1, 2, 3], values=[1, 2, 3])
-            
-
-            # save txt file
-            prediction_path = segs[j]   
-            prediction_txt_path = prediction_path.replace('.png', '.txt', 1)
-            # np.savetxt(prediction_txt_path, prediction_resized, fmt='%.6f')
-            np.savetxt(prediction_txt_path, prediction_resized.reshape((prediction_resized.shape[0],-1)), fmt='%.6f') #hope this is fine
-
-            # save image
-            prediction_img = array_to_img(prediction_resized * 50.0,
-                                          data_format=None, 
-                                          scale=False)
-            prediction_img.save(prediction_path)
-            
+    
+            for j in range(len(imgs)):
+                
+                img_context, img, mask_context = next(predict_generator)
+                masks = model.predict([img_context, img, mask_context], 
+                    batch_size=batch_size, verbose=0)
+    
+                masks = np.reshape(masks, newshape=(input_img_size, input_img_size, 4))
+                masks_resized = np.zeros((size, size, 4))
+                for c in range(4):
+                    # masks_resized[:, :, c] = imresize(masks[:, :, c], (size, size), interp='bilinear')
+                    masks_resized[:, :, c] = np.array(pil_image.fromarray(masks[:, :, c]).resize(size=(size, size), resample=2)) #changed this because the old verison was depricated. might not do exactly the same
+                prediction_resized = np.argmax(masks_resized, axis=-1)
+                prediction_resized = np.reshape(prediction_resized, newshape=(size, size, 1))
+    
+                # Check whether the prediction is successful
+                have_lvc = (1 in prediction_resized)
+                have_lvm = (2 in prediction_resized)
+                lvc_touch_background_length = touch_length_count(prediction_resized, size, size, 1, 0)
+                lvc_touch_lvm_length = touch_length_count(prediction_resized, size, size, 1, 2)
+                lvc_touch_rvc_length = touch_length_count(prediction_resized, size, size, 1, 3)
+    
+                lvc_second_largest_component_count = second_largest_component_count(prediction_resized, 1)
+                lvm_second_largest_component_count = second_largest_component_count(prediction_resized, 2)
+                rvc_second_largest_component_count = second_largest_component_count(prediction_resized, 3)
+    
+                
+                success = have_lvm and \
+                    ((lvc_touch_background_length + lvc_touch_rvc_length) <= 0.5 * lvc_touch_lvm_length)
+    
+    
+                
+                if not success:
+                    prediction_resized = 0 * prediction_resized
+                    print('Unsuccessful segmentation for {}'.format(imgs[j]))
+                else:
+                    prediction_resized = keep_largest_components(prediction_resized, keep_values=[1, 2, 3], values=[1, 2, 3])
+                
+    
+                # save txt file
+                prediction_path = segs[j]   
+                prediction_txt_path = prediction_path.replace('.png', '.txt', 1)
+                # np.savetxt(prediction_txt_path, prediction_resized, fmt='%.6f')
+                np.savetxt(prediction_txt_path, prediction_resized.reshape((prediction_resized.shape[0],-1)), fmt='%.6f') #hope this is fine
+    
+                # save image
+                prediction_img = array_to_img(prediction_resized * 50.0,
+                                              data_format=None, 
+                                              scale=False)
+                prediction_img.save(prediction_path)
+                
 
 
     K.clear_session()
@@ -266,7 +298,7 @@ def predict_lvrv_net():
 
 
 if __name__ == '__main__':
-    predict_lvrv_net()
+    predict_lvrv_net("mesa")
 
 
 

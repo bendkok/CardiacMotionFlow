@@ -129,3 +129,7 @@ def data_lvrv_segmentation_propagation_acdc(mode='all', fold = 1):
         return seq_context_imgs, seq_context_segs, seq_imgs, seq_segs
         
 
+
+if __name__ == '__main__':
+    # data_lvrv_segmentation_propagation_acdc()
+    data_lvrv_segmentation_propagation_acdc("predict")

@@ -21,19 +21,9 @@ def flatten(l):
 
 def data_mesa_apparentflow(mode='all', fold = 1, use_data_file=True):
 
-    # data_dir = config.acdc_data_dir
-    # data_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA_set1_sorted/{}" #config.acdc_data_dir
     data_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA_crop_2D/{}" #config.acdc_data_dir
     code_dir = config.code_dir
-    # out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/" 
     out_dir = config.out_dir
-
-    # dilated_subjects = config.acdc_dilated_subjects
-    # hypertrophic_subjects = config.acdc_hypertrophic_subjects
-    # infarct_subjects = config.acdc_infarct_subjects 
-    # normal_subjects = config.acdc_normal_subjects
-    # rv_subjects = config.acdc_rv_subjects
-    # test_subjects = config.acdc_test_subjects
     
     if use_data_file:
         info_file = os.path.join(out_dir, 'MESA_info.xlsx') #todo: change to be function-input, with None as default
@@ -60,8 +50,6 @@ def data_mesa_apparentflow(mode='all', fold = 1, use_data_file=True):
         subjects = all_subjects
     elif mode in ['train', 'val']: #mode == 'train':
         subjects = [x for i,x in enumerate(all_subjects) if (i % 5) != (fold % 5)]
-    # elif mode == 'val':
-    #     subjects = [x for i,x in enumerate(all_subjects) if (i % 5) == (fold % 5)]
     elif mode in ['test', 'predict']:
         subjects = test_subjects
     else:

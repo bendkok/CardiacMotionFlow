@@ -86,6 +86,9 @@ def predict_apparentflow_net(dataset = 'acdc'):
         img_list0, img_list1, seg_list0, seg_list1 = data_apparentflow(mode=mode, fold = fold)
     elif dataset == 'mesa':
         img_list0, img_list1, seg_list0, seg_list1 = data_mesa_apparentflow(mode=mode, fold = fold)
+    else:
+        print("Unkown dataset.")
+        raise 
         
 
     predict_sample = len(img_list0)
@@ -184,8 +187,8 @@ def predict_apparentflow_net(dataset = 'acdc'):
         paths = predict_img_list[1][j*batch_size : min((j+1)*batch_size, predict_sample)]
         predict_batch = next(predict_generator)
         # flow: t -> ED    flow2: ED -> t
-        if predict_batch[1].shape != predict_batch[0].shape:
-            print(predict_batch[1].shape, predict_batch[0].shape)
+        # if predict_batch[1].shape != predict_batch[0].shape:
+        #     print(predict_batch[1].shape, predict_batch[0].shape)
         flows = model.predict([predict_batch[1], predict_batch[0]], 
             batch_size=batch_size, verbose=0)
         flows2 = model.predict([predict_batch[0], predict_batch[1]], 
@@ -195,58 +198,87 @@ def predict_apparentflow_net(dataset = 'acdc'):
         warped_seg = warp_array_according_to_flow(predict_batch[2], flows, mode = 'nearest')
         warped_seg2 = warp_array_according_to_flow(predict_batch[3], flows2, mode = 'nearest')
         
+        #what savepath to use depends on the dataset
+        if dataset == 'acdc':
+            orgi_dir0 = '/crop_2D/'
+            new_dir0 = '/predict_2D/'
+            orgi_file0 = '/crop_2D_'
+            new_file0 = '/flow2_'
+            
+            orgi_dir1 = '/crop_2D/'
+            new_dir1 = '/predict_2D/'
+            orgi_file1 = '/crop_2D_'
+            new_file1 = '/predict_flow_warp2_'
+        elif dataset == 'mesa':
+            orgi_dir0 = '/MESA_crop_2D/'
+            new_dir0 = '/MESA_predict_2D/'
+            orgi_file0 = '_crop_'
+            new_file0 = '_flow2_'
+            
+            orgi_dir1 = '/MESA_crop_2D/'
+            new_dir1 = '/MESA_predict_2D/'
+            orgi_file1 = '_crop_'
+            new_file1 = '_predict_flow_warp2_'
+            
+            # if not os.path.exists(re.sub("(.*/MESA_predict_2D/MES\d{7}).*", "\g<1>", save_path)):
+            #     os.mkdir(re.sub("(.*/MESA_predict_2D/MES\d{7}).*", "\g<1>", save_path))
         
         # Save flow2   
-        if dataset == 'acdc':
-            for i in range(predict_batch[0].shape[0]):
-                path = paths[i]
-                save_path = path.replace('/crop_2D/', '/predict_2D/', 1)
-                save_path = save_path.replace('/crop_2D_', '/flow2_', 1)
-                save_path = save_path.replace('.png', '.npy', 1)
-                np.save(save_path, flows2[i])
-        elif dataset == 'mesa':
-            for i in range(predict_batch[0].shape[0]):
-                path = paths[i]
-                save_path = path.replace('/MESA_crop_2D/', '/MESA_predict_2D/', 1)
-                save_path = save_path.replace('_crop_', '_flow2_', 1)
-                save_path = save_path.replace('.png', '.npy', 1)
-                #creates save directory if it doesn't exist
-                if not os.path.exists(re.sub("(.*/MESA_predict_2D/MES\d{7}).*", "\g<1>", save_path)):
-                    os.mkdir(re.sub("(.*/MESA_predict_2D/MES\d{7}).*", "\g<1>", save_path))
-                np.save(save_path, flows2[i])
+        
+        for i in range(predict_batch[0].shape[0]):
+            path = paths[i]
+            save_path = path.replace('\\', '/') #need this line for the following to work
+            save_path = save_path.replace(orgi_dir0, new_dir0, 1)
+            save_path = save_path.replace(orgi_file0, new_file0, 1)
+            save_path = save_path.replace('.png', '.npy', 1)
+            os.makedirs(os.path.dirname(save_path), exist_ok=True) #make sure the parent directory exists
+            np.save(save_path, flows2[i], )
+        # elif dataset == 'mesa':
+        #     for i in range(predict_batch[0].shape[0]):
+        #         path = paths[i]
+        #         save_path = path.replace('\\', '/') #need this line for the following to work
+        #         save_path = path.replace('/MESA_crop_2D/', '/MESA_predict_2D/', 1)
+        #         save_path = save_path.replace('_crop_', '_flow2_', 1)
+        #         save_path = save_path.replace('.png', '.npy', 1)
+        #         #creates save directory if it doesn't exist
+        #         if not os.path.exists(re.sub("(.*/MESA_predict_2D/MES\d{7}).*", "\g<1>", save_path)):
+        #             os.mkdir(re.sub("(.*/MESA_predict_2D/MES\d{7}).*", "\g<1>", save_path))
+        #         np.save(save_path, flows2[i])
         
 
         # Resize and save the warped segmentation mask2
-        if dataset == 'acdc':
-            for i in range(predict_batch[0].shape[0]):
-                original_img_size = pil_image.open(paths[i]).size
-                original_size = original_img_size[0]
+        # if dataset == 'acdc':
+        for i in range(predict_batch[0].shape[0]):
+            original_img_size = pil_image.open(paths[i]).size
+            original_size = original_img_size[0]
+
+            path = paths[i]
+            warped_seg_resized2 = np.zeros((original_size, original_size, 1))
+            # warped_seg_resized2[:, :, 0] = imresize(warped_seg2[i, :, :, 0], (original_size, original_size), interp = 'nearest', mode = 'F') 
+            warped_seg_resized2[:, :, 0] = np.array(pil_image.fromarray(warped_seg2[i, :, :, 0], mode = 'F').resize(size=(original_size, original_size), resample = 0)) #hope this is fine, and that mode is the same
+
+            warped_seg_resized2 = np.rint(warped_seg_resized2)
+            warped_save_path2 = path.replace('\\', '/') #need this line for the following to work
+            warped_save_path2 = warped_save_path2.replace(orgi_dir1, new_dir1, 1)
+            warped_save_path2 = warped_save_path2.replace(orgi_file1, new_file1, 1)
+            warped_seg_mask2 = array_to_img(warped_seg_resized2 * 50.0, data_format=None, scale=False)
+            warped_seg_mask2.save(warped_save_path2)
+        # elif dataset == 'mesa':
+        #     for i in range(predict_batch[0].shape[0]):
+        #         original_img_size = pil_image.open(paths[i]).size
+        #         original_size = original_img_size[0]
     
-                path = paths[i]
-                warped_seg_resized2 = np.zeros((original_size, original_size, 1))
-                # warped_seg_resized2[:, :, 0] = imresize(warped_seg2[i, :, :, 0], (original_size, original_size), interp = 'nearest', mode = 'F') 
-                warped_seg_resized2[:, :, 0] = np.array(pil_image.fromarray(warped_seg2[i, :, :, 0], mode = 'F').resize(size=(original_size, original_size), resample = 0)) #hope this is fine, and that mode is the same
+        #         path = paths[i]
+        #         warped_seg_resized2 = np.zeros((original_size, original_size, 1))
+        #         # warped_seg_resized2[:, :, 0] = imresize(warped_seg2[i, :, :, 0], (original_size, original_size), interp = 'nearest', mode = 'F') 
+        #         warped_seg_resized2[:, :, 0] = np.array(pil_image.fromarray(warped_seg2[i, :, :, 0], mode = 'F').resize(size=(original_size, original_size), resample = 0)) #hope this is fine, and that mode is the same
     
-                warped_seg_resized2 = np.rint(warped_seg_resized2)
-                warped_save_path2 = path.replace('/crop_2D/', '/predict_2D/', 1)
-                warped_save_path2 = warped_save_path2.replace('/crop_2D_', '/predict_flow_warp2_', 1)
-                warped_seg_mask2 = array_to_img(warped_seg_resized2 * 50.0, data_format=None, scale=False)
-                warped_seg_mask2.save(warped_save_path2)
-        elif dataset == 'mesa':
-            for i in range(predict_batch[0].shape[0]):
-                original_img_size = pil_image.open(paths[i]).size
-                original_size = original_img_size[0]
-    
-                path = paths[i]
-                warped_seg_resized2 = np.zeros((original_size, original_size, 1))
-                # warped_seg_resized2[:, :, 0] = imresize(warped_seg2[i, :, :, 0], (original_size, original_size), interp = 'nearest', mode = 'F') 
-                warped_seg_resized2[:, :, 0] = np.array(pil_image.fromarray(warped_seg2[i, :, :, 0], mode = 'F').resize(size=(original_size, original_size), resample = 0)) #hope this is fine, and that mode is the same
-    
-                warped_seg_resized2 = np.rint(warped_seg_resized2)
-                warped_save_path2 = path.replace('/MESA_crop_2D/', '/MESA_predict_2D/', 1)
-                warped_save_path2 = warped_save_path2.replace('_crop_', '_predict_flow_warp2_', 1)
-                warped_seg_mask2 = array_to_img(warped_seg_resized2 * 50.0, data_format=None, scale=False)
-                warped_seg_mask2.save(warped_save_path2)
+        #         warped_seg_resized2 = np.rint(warped_seg_resized2)
+        #         warped_save_path2 = path.replace('\\', '/') #need this line for the following to work
+        #         warped_save_path2 = path.replace('/MESA_crop_2D/', '/MESA_predict_2D/', 1)
+        #         warped_save_path2 = warped_save_path2.replace('_crop_', '_predict_flow_warp2_', 1)
+        #         warped_seg_mask2 = array_to_img(warped_seg_resized2 * 50.0, data_format=None, scale=False)
+        #         warped_seg_mask2.save(warped_save_path2)
         
 
         

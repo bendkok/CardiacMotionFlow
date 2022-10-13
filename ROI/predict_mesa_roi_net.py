@@ -8,7 +8,7 @@ import math
 from PIL import Image as pil_image
 import tensorflow as tf
 import re
-import regex
+from tqdm import tqdm
 
 from keras.models import (
     Model,
@@ -120,7 +120,7 @@ def predict_roi_net(use_info_file=True):
     print('Start prediction')
     print('There will be {} batches with batch-size {}'.format(int(math.ceil(float(predict_sample) / batch_size)), batch_size) )
 
-    for i in range(int(math.ceil(float(predict_sample) / batch_size)) ):
+    for i in tqdm(range(int(math.ceil(float(predict_sample) / batch_size)) )):
         print('batch {}'.format(i) )
         start_idx = i * batch_size
         end_idx = min((i + 1) * batch_size, predict_sample)

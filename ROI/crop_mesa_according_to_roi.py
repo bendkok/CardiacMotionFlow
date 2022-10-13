@@ -16,6 +16,7 @@ import multiprocessing.pool
 from functools import partial
 import pydicom
 import re
+from tqdm import tqdm
 
 import config
 
@@ -123,7 +124,7 @@ def crop_according_to_roi(use_info_file=True):
     # predict_gt_list = []
 
     
-    for s,subject in enumerate(all_subjects):
+    for s,subject in enumerate(tqdm(all_subjects)):
         
         print(subject)
         subject_dir = original_2D_paths[s]
