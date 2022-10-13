@@ -8,11 +8,14 @@ import pydicom
 import pandas as pd
 import numpy as np
 import shutil as shu
+import config
+
 
 
 def data_mesa_roi_predict(use_info_file=True, delete=False):
     data_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA_set1_sorted/{}" #config.acdc_data_dir
-    out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/" 
+    # out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/" 
+    out_dir = config.out_dir
 
     
     predict_img_list = []
@@ -22,13 +25,15 @@ def data_mesa_roi_predict(use_info_file=True, delete=False):
     
     if delete:
         #clears the output folder incase any stray/old files are there
-        shu.rmtree(os.path.join(out_dir, 'MESA_mask_original_2D'))
+        if os.path.exists(os.path.join(out_dir, 'MESA_mask_original_2D')):            
+            shu.rmtree(os.path.join(out_dir, 'MESA_mask_original_2D'))
     
     #we can either use a file with info on the different paitients, or we can auto-parse the directory
     if not use_info_file:        
         
         all_subjects = ['MES00{}01'.format(str(x).zfill(3)) for x in range(100)]
-        ed_instants = np.zeros(len(all_subjects), dtype=int)
+        ed_list = np.zeros(len(all_subjects), dtype=int)
+        original_2D_paths = []
         
     else:
         info_file = os.path.join(out_dir, 'MESA_info.xlsx') #todo: change to be function-input, with None as default
@@ -40,8 +45,8 @@ def data_mesa_roi_predict(use_info_file=True, delete=False):
         original_2D_paths = data.Filepath.to_numpy(dtype=str) #list of directories where the files we use are
         
         instants_list = data.Instants.to_numpy(dtype=int)
-        ed_instants = data.ED.to_numpy(dtype=int)
-        es_instants = data.ES.to_numpy(dtype=int)
+        ed_list = data.ED.to_numpy(dtype=int)
+        es_list = data.ES.to_numpy(dtype=int)
         slices_list = data.Slices.to_numpy(dtype=int)
                  
     for s,subject in enumerate(all_subjects):
@@ -78,7 +83,9 @@ def data_mesa_roi_predict(use_info_file=True, delete=False):
                         longest = curr
                         longest_dir = sd
                 original_2D_path = os.path.join(original_2D_path, longest_dir)        
-        
+            
+            original_2D_paths.append(original_2D_path)
+            
         else:
             original_2D_path = original_2D_paths[s]
             slices = slices_list[s]
@@ -105,7 +112,7 @@ def data_mesa_roi_predict(use_info_file=True, delete=False):
             #     print(subject, instants, slices)
     
         # Prediction on the ED stacks only
-        used_instants = [ed_instants[s]]
+        used_instants = [ed_list[s]]
         #Here they tried to get only the data for ED. MESA dosen't record when that is, so I've just used 0 instead
         
         # for s in range(slices):
@@ -124,7 +131,7 @@ def data_mesa_roi_predict(use_info_file=True, delete=False):
     # print(predict_gt_list)
     # print(subject_dir_list)
 
-    return predict_img_list, predict_gt_list, subject_dir_list
+    return predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths
 
 
 

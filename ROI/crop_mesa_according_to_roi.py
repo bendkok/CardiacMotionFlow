@@ -15,6 +15,7 @@ import pandas as pd
 import multiprocessing.pool
 from functools import partial
 import pydicom
+import re
 
 import config
 
@@ -72,6 +73,11 @@ def change_array_values(array):
                 output[u,v] = 1
     return output
 
+def key_sort_files(value):
+    #from: https://stackoverflow.com/a/59175736/15147410
+    """Extract numbers from string and return a tuple of the numeric values"""
+    return tuple(map(int, re.findall('\d+', value)))
+
 
 def crop_according_to_roi(use_info_file=True):
     # The ratio that determines the width of the margin
@@ -87,7 +93,7 @@ def crop_according_to_roi(use_info_file=True):
     out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/" 
     # code_dir = config.code_dir
     
-    predict_img_list, predict_gt_list, subject_dir_list = data_mesa_roi_predict(use_info_file, delete=False)
+    predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths = data_mesa_roi_predict(use_info_file, delete=False)
 
     #we have 100 subject so far, for now I'm setting all of them to be training set
     # train_subjects = ['MES00{}01'.format(str(x).zfill(3)) for x in range(100)] # dilated_subjects + hypertrophic_subjects + infarct_subjects + normal_subjects + rv_subjects
@@ -108,8 +114,8 @@ def crop_according_to_roi(use_info_file=True):
     original_2D_paths = data.Filepath.to_numpy(dtype=str) #list of directories where the files we use are
     
     instants_list = data.Instants.to_numpy(dtype=int)
-    ed_instants = data.ED.to_numpy(dtype=int)
-    es_instants = data.ES.to_numpy(dtype=int)
+    ed_list = data.ED.to_numpy(dtype=int)
+    es_list = data.ES.to_numpy(dtype=int)
     slices_list = data.Slices.to_numpy(dtype=int)
     
     
@@ -132,8 +138,8 @@ def crop_according_to_roi(use_info_file=True):
         
         instants = instants_list[s] # subject_data.CardiacNumberOfImages #int([x for x in subject_info if x[0] == subject][0][2])
         #for now I've just set ed/es to be the first and last frames. Don't think that's the best option
-        ed_instant = ed_instants[s] # 0 # int([x for x in subject_info if x[0] == subject][0][3])
-        es_instant = es_instants[s] # len(subject_dir_frames) -1  # int([x for x in subject_info if x[0] == subject][0][4])
+        ed_instant = ed_list[s] # 0 # int([x for x in subject_info if x[0] == subject][0][3])
+        es_instant = es_list[s] # len(subject_dir_frames) -1  # int([x for x in subject_info if x[0] == subject][0][4])
         slices = slices_list[s] # int(len(subject_dir_frames)/20) #int([x for x in subject_info if x[0] == subject][0][5])
 
         # used_instants_roi = [ed_instant]
@@ -186,9 +192,12 @@ def crop_according_to_roi(use_info_file=True):
         w = subject_data.Columns #img_size[1]
         image_data = np.zeros((w,h,slices,instants))
         
-        for i in range(instants):
-            for sl in range(slices):
-                image_file = os.path.join(subject_dir, os.listdir(subject_dir)[i*slices+sl])
+        # print(original_2D_paths[s])
+        
+        for sl in range(slices):
+            for i in range(instants):
+                # print(i+sl*instants)
+                image_file = os.path.join(subject_dir, os.listdir(subject_dir)[i+sl*instants])
                 image_load = pydicom.read_file(image_file, force=True) 
                 image_data[:,:,sl,i] = image_load.pixel_array
                 
@@ -246,11 +255,16 @@ def crop_according_to_roi(use_info_file=True):
             multiplier = 1.0
 
         print('max_pixel_value = {}, multiplier = {}'.format(max_pixel_value, multiplier) )
-
-        for s in range(slices):
+        
+        img_names = sorted(os.listdir(subject_dir), key=key_sort_files)
+        all_files = [os.path.join(subject_dir, file) for file in img_names]
+        for sl in range(slices):
             for t in range(instants):
-                s_t_image_file = os.path.join(crop_2D_path, 'crop_2D_{}_{}.png'.format(str(s).zfill(2), str(t).zfill(2)) )
-                Image.fromarray((np.rot90(crop_image_data[:, ::-1, s, t], 3) * multiplier).astype('uint8')).save(s_t_image_file)
+                # img_path = os.path.join(subject_dir, os.listdir(subject_dir)[t+sl*instants])
+                img_path = all_files[t+sl*instants]
+                s_t_image_file = re.sub("MESA_set1_sorted/(MES0\d{6}).*\\\\([0-9]{1,3}_)(sliceloc.*)", 'MESA_crop_2D/\g<1>/\g<2>crop_\g<3>', img_path)
+                # s_t_image_file = os.path.join(crop_2D_path, 'crop_2D_{}_{}.png'.format(str(sl).zfill(2), str(t).zfill(2)) )
+                Image.fromarray((np.rot90(crop_image_data[:, ::-1, sl, t], 3) * multiplier).astype('uint8')).save(s_t_image_file + '.png')
 
         
         """

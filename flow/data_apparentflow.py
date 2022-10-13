@@ -24,11 +24,11 @@ def data_apparentflow(mode='all', fold = 1):
 
     if mode == 'all':
         subjects = all_subjects
-    elif mode == 'train':
+    elif mode in ['train', 'val']: #mode == 'train':
         subjects = [x for i,x in enumerate(all_subjects) if (i % 5) != (fold % 5)]
-    elif mode == 'val':
-        subjects = [x for i,x in enumerate(all_subjects) if (i % 5) == (fold % 5)]
-    elif mode == 'predict':
+    # elif mode == 'val':
+    #     subjects = [x for i,x in enumerate(all_subjects) if (i % 5) == (fold % 5)]
+    elif mode in ['test', 'predict']:
         subjects = test_subjects
     else:
         print('Incorrect mode')
@@ -116,5 +116,11 @@ def data_apparentflow(mode='all', fold = 1):
 
     return img_list0, img_list1, seg_list0, seg_list1
 
-
+if __name__ == '__main__':
+    
+    res = data_apparentflow(mode='predict')
+    print([len(r) for r in res])
+    # print(len(res[0]), len(res[1]))
+    
+    
 

@@ -58,7 +58,7 @@ def predict_roi_net(use_info_file=True):
 
     ######
     # Data
-    predict_img_list, predict_gt_list, subject_dir_list = data_mesa_roi_predict(use_info_file, True)
+    predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths = data_mesa_roi_predict(use_info_file, True)
     # predict_img_list, predict_gt_list, subject_dir_list = data_mesa_roi_predict(False)
     
 
