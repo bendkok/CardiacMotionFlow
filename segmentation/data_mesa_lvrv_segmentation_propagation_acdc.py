@@ -22,9 +22,9 @@ def flatten(l):
 
 def data_mesa_lvrv_segmentation_propagation_acdc(mode='all', fold = 1, use_data_file=True):
 
-    data_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA_crop_2D/{}" #config.acdc_data_dir
+    data_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA/MESA_crop_2D/{}" #config.acdc_data_dir
     code_dir = config.code_dir
-    out_dir = config.out_dir
+    out_dir = config.out_dir_mesa
     
     if use_data_file:
         info_file = os.path.join(out_dir, 'MESA_info.xlsx') #todo: change to be function-input, with None as default
@@ -104,7 +104,7 @@ def data_mesa_lvrv_segmentation_propagation_acdc(mode='all', fold = 1, use_data_
             # imgs = []
             # segs = []
             
-            context_img = [""] + files[t::instants][:-1]
+            context_img = ["dummy.png"] + files[t::instants][:-1]
             context_img = [os.path.join(subject_dir, i) for i in context_img]
             if mode in ['all', 'train', 'val']:    
                 context_seg = [""]*instants #todo: add later
@@ -116,7 +116,8 @@ def data_mesa_lvrv_segmentation_propagation_acdc(mode='all', fold = 1, use_data_
             if mode in ['all', 'train', 'val']:    
                 seg = [""]*instants #todo: add later
             elif mode in ['predict', 'val_predict']:
-                seg = [""]*instants #todo: add later
+                seg = [i.replace("MESA_crop_2D", "MESA_predict_lvrv_2D") for i in img]
+                seg = [i.replace("_crop_", "_predict_lvrv2_") for i in seg]
             
             seq_context_imgs_no_group += context_img
             seq_context_segs_no_group += context_seg

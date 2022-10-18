@@ -599,11 +599,13 @@ class ImageDataGenerator2(object):
                             color_mode='rgb',
                             class_list=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
+                            do_print_index_array=False,
                             save_to_dir=None,
                             save_prefix='',
                             save_format='png',
                             save_period=1,
-                            follow_links=False):
+                            follow_links=False,
+                            do_print_found=False,):
         return PathListIterator(
             path_list, self,
             target_size=target_size, pad_to_square=pad_to_square, 
@@ -614,11 +616,13 @@ class ImageDataGenerator2(object):
             class_list=class_list, class_mode=class_mode,
             data_format=self.data_format,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
+            do_print_index_array=do_print_index_array,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format,
             save_period=save_period,
-            follow_links=follow_links)
+            follow_links=follow_links,
+            do_print_found=do_print_found)
 
     def standardize(self, x):
         """Apply the normalization configuration to a batch of inputs.
@@ -827,19 +831,20 @@ class Iterator(object):
         seed: Random seeding for data shuffling.
     """
 
-    def __init__(self, n, batch_size, shuffle, seed):
+    def __init__(self, n, batch_size, shuffle, seed, do_print_index_array=False):
         self.n = n
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.batch_index = 0
         self.total_batches_seen = 0
         self.lock = threading.Lock()
-        self.index_generator = self._flow_index(n, batch_size, shuffle, seed)
+        self.do_print_index_array = do_print_index_array
+        self.index_generator = self._flow_index(n, batch_size, shuffle, seed, do_print_index_array)
 
     def reset(self):
         self.batch_index = 0
 
-    def _flow_index(self, n, batch_size=32, shuffle=False, seed=None):
+    def _flow_index(self, n, batch_size=32, shuffle=False, seed=None, do_print_index_array=False):
         # Ensure self.batch_index is 0.
         self.reset()
         while 1:
@@ -850,12 +855,16 @@ class Iterator(object):
                 index_array = np.arange(n)
                 if shuffle:
                     index_array = np.random.permutation(n)
-                if (len(index_array) >= 3):
-                    print("index_array:", index_array[0], index_array[1], index_array[2], "...")
-                if (len(index_array) == 2):
-                    print("index_array:", index_array[0], index_array[1])
-                if (len(index_array) == 1):
-                    print("index_array:", index_array[0])
+                if do_print_index_array:
+                    if (len(index_array) >= 3):
+                        # print("index_array:" + index_array[0], index_array[1], index_array[2], "...")
+                        print("index_array: " + str(index_array[0]) + ' ' + str(index_array[1]) + ' ' + str(index_array[2]) + "...\n")
+                    if (len(index_array) == 2):
+                        # print("index_array:", index_array[0], index_array[1])
+                        print("index_array: " + str(index_array[0]) + ' ' + str(index_array[1]))
+                    if (len(index_array) == 1):
+                        # print("index_array:", index_array[0])
+                        print("index_array: " + str(index_array[0]))
             current_index = (self.batch_index * batch_size) % n
             if n > current_index + batch_size:
                 current_batch_size = batch_size
@@ -1249,9 +1258,11 @@ class PathListIterator(Iterator):
                  color_mode='rgb',
                  class_list=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
+                 do_print_index_array=False,
                  data_format=None,
                  save_to_dir=None, save_prefix='', save_format='png', save_period=1,
-                 follow_links=False):
+                 follow_links=False,
+                 do_print_found=False):
         if data_format is None:
             data_format = K.image_data_format()
         self.path_list = path_list
@@ -1308,8 +1319,10 @@ class PathListIterator(Iterator):
         self.num_class = len(set(class_list))
 
         self.samples = len(path_list)
-
-        print('Found %d images belonging to %d classes.' % (self.samples, self.num_class))
+        
+        #we don't need to print this 3 times in a row
+        if do_print_found:
+            print('Found %d images belonging to %d classes.' % (self.samples, self.num_class))
 
         # second, build an index of the images in the different class subfolders
         results = []
@@ -1317,7 +1330,7 @@ class PathListIterator(Iterator):
         self.filenames = path_list
         self.classes = np.array(class_list, dtype='int32')
         
-        super(PathListIterator, self).__init__(self.samples, batch_size, shuffle, seed)
+        super(PathListIterator, self).__init__(self.samples, batch_size, shuffle, seed, do_print_index_array)
 
     def next(self):
         """For python 2.x.
@@ -1360,6 +1373,8 @@ class PathListIterator(Iterator):
                     x = np.reshape(x, self.image_shape)
                     # print(x.pixel_array)
                     # exit()
+            else:
+                print(fname)
 
             x = self.image_data_generator2.random_transform(x)
             x = self.image_data_generator2.standardize(x)

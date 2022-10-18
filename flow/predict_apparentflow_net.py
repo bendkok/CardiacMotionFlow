@@ -233,17 +233,6 @@ def predict_apparentflow_net(dataset = 'acdc'):
             save_path = save_path.replace('.png', '.npy', 1)
             os.makedirs(os.path.dirname(save_path), exist_ok=True) #make sure the parent directory exists
             np.save(save_path, flows2[i], )
-        # elif dataset == 'mesa':
-        #     for i in range(predict_batch[0].shape[0]):
-        #         path = paths[i]
-        #         save_path = path.replace('\\', '/') #need this line for the following to work
-        #         save_path = path.replace('/MESA_crop_2D/', '/MESA_predict_2D/', 1)
-        #         save_path = save_path.replace('_crop_', '_flow2_', 1)
-        #         save_path = save_path.replace('.png', '.npy', 1)
-        #         #creates save directory if it doesn't exist
-        #         if not os.path.exists(re.sub("(.*/MESA_predict_2D/MES\d{7}).*", "\g<1>", save_path)):
-        #             os.mkdir(re.sub("(.*/MESA_predict_2D/MES\d{7}).*", "\g<1>", save_path))
-        #         np.save(save_path, flows2[i])
         
 
         # Resize and save the warped segmentation mask2
@@ -263,30 +252,14 @@ def predict_apparentflow_net(dataset = 'acdc'):
             warped_save_path2 = warped_save_path2.replace(orgi_file1, new_file1, 1)
             warped_seg_mask2 = array_to_img(warped_seg_resized2 * 50.0, data_format=None, scale=False)
             warped_seg_mask2.save(warped_save_path2)
-        # elif dataset == 'mesa':
-        #     for i in range(predict_batch[0].shape[0]):
-        #         original_img_size = pil_image.open(paths[i]).size
-        #         original_size = original_img_size[0]
-    
-        #         path = paths[i]
-        #         warped_seg_resized2 = np.zeros((original_size, original_size, 1))
-        #         # warped_seg_resized2[:, :, 0] = imresize(warped_seg2[i, :, :, 0], (original_size, original_size), interp = 'nearest', mode = 'F') 
-        #         warped_seg_resized2[:, :, 0] = np.array(pil_image.fromarray(warped_seg2[i, :, :, 0], mode = 'F').resize(size=(original_size, original_size), resample = 0)) #hope this is fine, and that mode is the same
-    
-        #         warped_seg_resized2 = np.rint(warped_seg_resized2)
-        #         warped_save_path2 = path.replace('\\', '/') #need this line for the following to work
-        #         warped_save_path2 = path.replace('/MESA_crop_2D/', '/MESA_predict_2D/', 1)
-        #         warped_save_path2 = warped_save_path2.replace('_crop_', '_predict_flow_warp2_', 1)
-        #         warped_seg_mask2 = array_to_img(warped_seg_resized2 * 50.0, data_format=None, scale=False)
-        #         warped_seg_mask2.save(warped_save_path2)
+
         
 
         
         
 
     K.clear_session()
-
-    print('Prediction is done!')
+    print('Apparent flow prediction is done!')
 
 
 if __name__ == '__main__':

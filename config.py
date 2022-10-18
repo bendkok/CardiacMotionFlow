@@ -12,7 +12,8 @@ excluded_slice_ratio = 0.2
 # For the ACDC data 
 # acdc_data_dir = 'C:/Users/benda/Documents/Jobb_Simula/MAD_motion/CINE_MRI_sorted/{}'
 acdc_data_dir = 'C:/Users/benda/Documents/Jobb_Simula/CardiacMotionFlow/acdc_info/acdc_data/{}'
-out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/"
+# out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/"
+out_dir_mesa = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA/"
 
 acdc_dilated_subjects = ['patient{}'.format(str(x).zfill(3)) for x in range(1, 21)]
 acdc_hypertrophic_subjects = ['patient{}'.format(str(x).zfill(3)) for x in range(21, 41)]

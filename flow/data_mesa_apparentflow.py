@@ -21,9 +21,9 @@ def flatten(l):
 
 def data_mesa_apparentflow(mode='all', fold = 1, use_data_file=True):
 
-    data_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA_crop_2D/{}" #config.acdc_data_dir
+    data_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA/MESA_crop_2D/{}" #config.acdc_data_dir
     code_dir = config.code_dir
-    out_dir = config.out_dir
+    out_dir = config.out_dir_mesa
     
     if use_data_file:
         info_file = os.path.join(out_dir, 'MESA_info.xlsx') #todo: change to be function-input, with None as default

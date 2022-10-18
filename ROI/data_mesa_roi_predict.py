@@ -13,9 +13,9 @@ import config
 
 
 def data_mesa_roi_predict(use_info_file=True, delete=False):
-    data_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA_set1_sorted/{}" #config.acdc_data_dir
+    data_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA/MESA_set1_sorted/{}" #config.acdc_data_dir
     # out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/" 
-    out_dir = config.out_dir
+    out_dir = config.out_dir_mesa
 
     
     predict_img_list = []

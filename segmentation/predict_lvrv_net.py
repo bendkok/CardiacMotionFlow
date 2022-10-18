@@ -52,7 +52,6 @@ from module_lvrv_net import net_module
 import config
 
 import contextlib
-import inspect
 
 #source: https://stackoverflow.com/a/37243211/15147410
 class DummyFile(object):
@@ -165,7 +164,7 @@ def predict_lvrv_net(dataset = 'acdc'):
     
     for i in tqdm(range(predict_sequence), file=sys.stdout):
         with nostdout():
-            print('Sequence # {}'.format(i) )
+            print('\nSequence # {}'.format(i) )
     
             # The lists fot the sequence
             context_imgs = seq_context_imgs[i]
@@ -187,11 +186,13 @@ def predict_lvrv_net(dataset = 'acdc'):
                 batch_size=batch_size,
                 shuffle=False,
                 seed=seed,
+                do_print_index_array=True,
                 save_to_dir=None,
                 save_prefix='',
                 save_format='png',
                 save_period=500,
-                follow_links=False)
+                follow_links=False,
+                do_print_found=True)
     
             image_generator = image_datagen.flow_from_path_list(
                 path_list=imgs,
@@ -244,6 +245,7 @@ def predict_lvrv_net(dataset = 'acdc'):
             for j in range(len(imgs)):
                 
                 img_context, img, mask_context = next(predict_generator)
+                
                 masks = model.predict([img_context, img, mask_context], 
                     batch_size=batch_size, verbose=0)
     
@@ -256,22 +258,21 @@ def predict_lvrv_net(dataset = 'acdc'):
                 prediction_resized = np.reshape(prediction_resized, newshape=(size, size, 1))
     
                 # Check whether the prediction is successful
-                have_lvc = (1 in prediction_resized)
+                # have_lvc = (1 in prediction_resized)
                 have_lvm = (2 in prediction_resized)
                 lvc_touch_background_length = touch_length_count(prediction_resized, size, size, 1, 0)
                 lvc_touch_lvm_length = touch_length_count(prediction_resized, size, size, 1, 2)
                 lvc_touch_rvc_length = touch_length_count(prediction_resized, size, size, 1, 3)
     
-                lvc_second_largest_component_count = second_largest_component_count(prediction_resized, 1)
-                lvm_second_largest_component_count = second_largest_component_count(prediction_resized, 2)
-                rvc_second_largest_component_count = second_largest_component_count(prediction_resized, 3)
+                # lvc_second_largest_component_count = second_largest_component_count(prediction_resized, 1)
+                # lvm_second_largest_component_count = second_largest_component_count(prediction_resized, 2)
+                # rvc_second_largest_component_count = second_largest_component_count(prediction_resized, 3)
     
                 
                 success = have_lvm and \
                     ((lvc_touch_background_length + lvc_touch_rvc_length) <= 0.5 * lvc_touch_lvm_length)
     
     
-                
                 if not success:
                     prediction_resized = 0 * prediction_resized
                     print('Unsuccessful segmentation for {}'.format(imgs[j]))
@@ -283,6 +284,7 @@ def predict_lvrv_net(dataset = 'acdc'):
                 prediction_path = segs[j]   
                 prediction_txt_path = prediction_path.replace('.png', '.txt', 1)
                 # np.savetxt(prediction_txt_path, prediction_resized, fmt='%.6f')
+                os.makedirs(os.path.dirname(prediction_txt_path), exist_ok=True) #make sure the parent directory exists
                 np.savetxt(prediction_txt_path, prediction_resized.reshape((prediction_resized.shape[0],-1)), fmt='%.6f') #hope this is fine
     
                 # save image
@@ -294,11 +296,13 @@ def predict_lvrv_net(dataset = 'acdc'):
 
 
     K.clear_session()
+    print("Segmentation prediction done!")
 
 
 
 if __name__ == '__main__':
     predict_lvrv_net("mesa")
+    # predict_lvrv_net()
 
 
 
