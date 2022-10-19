@@ -7,6 +7,8 @@ import scipy
 import math
 from PIL import Image as pil_image
 import tensorflow as tf
+import re
+from tqdm import tqdm
 
 from keras.models import (
     Model,
@@ -27,20 +29,48 @@ from image2 import (
     ImageDataGenerator2
 )
 from ROI.data_roi_predict import data_roi_predict
+from ROI.data_mesa_roi_predict import data_mesa_roi_predict
 
 from ROI.module_roi_net import net_module
 
 import config
+import pydicom
+
+import sys
+import contextlib
+
+#source: https://stackoverflow.com/a/37243211/15147410
+class DummyFile(object):
+    file = None
+    def __init__(self, file):
+        self.file = file
+
+    def write(self, x):
+        # Avoid print() second call (useless \n)
+        if len(x.rstrip()) > 0:
+            tqdm.write(x, file=self.file)
+            
+    def flush(self):
+        pass
+
+@contextlib.contextmanager
+def nostdout():
+    save_stdout = sys.stdout
+    sys.stdout = DummyFile(sys.stdout)
+    yield
+    sys.stdout = save_stdout
 
 
-
-def predict_roi_net():
+def predict_roi_net(dataset='acdc', use_info_file=True):
 
     code_path = config.code_dir
 
     initial_lr = config.roi_net_initial_lr
     batch_size = config.roi_net_batch_size
-    input_img_size = config.roi_net_input_img_size
+    if dataset == 'acdc':
+        input_img_size = config.roi_net_input_img_size
+    elif dataset == 'mesa':
+        input_img_size = config.roi_net_input_img_size_mesa
 
     epochs = config.roi_net_epochs
 
@@ -55,9 +85,17 @@ def predict_roi_net():
 
     ######
     # Data
-    predict_img_list, predict_gt_list = data_roi_predict()
+    if dataset == 'acdc':
+        predict_img_list, predict_gt_list = data_roi_predict()
+    elif dataset == 'mesa':
+        predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths = data_mesa_roi_predict(use_info_file, True)
+        # predict_img_list, predict_gt_list, subject_dir_list = data_mesa_roi_predict(False)
+        subject_dir_list = sorted(subject_dir_list)
+    else:
+        print("Unknown dataset.")
+        raise
+        
     
-
     predict_img_list = sorted(predict_img_list)
     predict_gt_list = sorted(predict_gt_list)
 
@@ -115,52 +153,71 @@ def predict_roi_net():
     print('Start prediction')
     print('There will be {} batches with batch-size {}'.format(int(math.ceil(float(predict_sample) / batch_size)), batch_size) )
 
-    for i in range(int(math.ceil(float(predict_sample) / batch_size)) ):
-        print('batch {}'.format(i) )
-        start_idx = i * batch_size
-        end_idx = min((i + 1) * batch_size, predict_sample)
-        img_list_batch = predict_img_list[start_idx:end_idx]
-
-        batch_img = next(image_generator) 
-
-        predict_masks = model.predict(batch_img, 
-                                      batch_size=batch_size, 
-                                      verbose=0)
-        binarized_predict_masks = np.where(predict_masks >= 0.5, 1.0, 0.0)
-
-        for j in range(len(img_list_batch)):
-            img_path = img_list_batch[j]
-            #print(img_path)
-            img_size = pil_image.open(img_path).size
-            h = img_size[0]
-            w = img_size[1]
-            size = max(h, w)
-
-            # reshape and crop the predicted mask to the original size
-            mask = np.reshape(binarized_predict_masks[j], newshape=(input_img_size, input_img_size))
-            # resized_mask = scipy.misc.imresize(mask, size=(size, size), interp='nearest')/255.0
-            resized_mask = np.array(pil_image.fromarray(mask).resize(size=(size, size), resample=0)) / 255.0 # I think this does the same, not sure
-            cropped_resized_mask = resized_mask[((size-w)//2):((size-w)//2 + w), 
-                                                ((size-h)//2):((size-h)//2 + h)]
-            cropped_resized_mask = np.reshape(cropped_resized_mask, newshape=(w, h, 1))
-
-            predicted_mask_path = img_path.replace('original_2D', 'mask_original_2D', 2)
-
-            # save txt file
-            predicted_mask_txt_path = predicted_mask_path.replace('.png', '.txt', 1)
-       
-            # np.savetxt(predicted_mask_txt_path, cropped_resized_mask, fmt='%.6f')
-            np.savetxt(predicted_mask_txt_path, cropped_resized_mask.reshape((cropped_resized_mask.shape[0],-1)), fmt='%.6f') #hope this is fine
-
-            # save image
-            cropped_resized_mask_img = array_to_img(cropped_resized_mask,
-                                                    data_format=None, 
-                                                    scale=True)
-            cropped_resized_mask_img.save(predicted_mask_path)
+    for i in tqdm(range(int(math.ceil(float(predict_sample) / batch_size)) ), file=sys.stdout):
+        with nostdout():
+            print('batch {}'.format(i) )
+            start_idx = i * batch_size
+            end_idx = min((i + 1) * batch_size, predict_sample)
+            img_list_batch = predict_img_list[start_idx:end_idx]
+    
+            batch_img = next(image_generator) 
+    
+            predict_masks = model.predict(batch_img, 
+                                          batch_size=batch_size, 
+                                          verbose=0)
+            binarized_predict_masks = np.where(predict_masks >= 0.5, 1.0, 0.0)
+    
+            for j in range(len(img_list_batch)):
+                img_path = img_list_batch[j]
+                #print(img_path)
+                if dataset == 'acdc':
+                    img_size = pil_image.open(img_path).size
+                    h = img_size[0]
+                    w = img_size[1]
+                elif dataset == 'mesa':
+                    subject_data = pydicom.read_file(img_path, force=True) 
+                    h = subject_data.Rows #img_size[0]
+                    w = subject_data.Columns #img_size[1]
+                size = max(h, w)
+    
+                # reshape and crop the predicted mask to the original size
+                mask = np.reshape(binarized_predict_masks[j], newshape=(input_img_size, input_img_size))
+                # resized_mask = scipy.misc.imresize(mask, size=(size, size), interp='nearest')/255.0
+                resized_mask = np.array(pil_image.fromarray(mask).resize(size=(size, size), resample=0)) / 255.0 # I think this does the same, not sure
+                cropped_resized_mask = resized_mask[((size-w)//2):((size-w)//2 + w), 
+                                                    ((size-h)//2):((size-h)//2 + h)]
+                cropped_resized_mask = np.reshape(cropped_resized_mask, newshape=(w, h, 1))
+    
+                if dataset == 'acdc':
+                    predicted_mask_path = img_path.replace('original_2D', 'mask_original_2D', 2)
+                    
+                    # save txt file
+                    predicted_mask_txt_path = predicted_mask_path.replace('.png', '.txt', 1)
+                    np.savetxt(predicted_mask_txt_path, cropped_resized_mask.reshape((cropped_resized_mask.shape[0],-1)), fmt='%.6f') #hope this is fine
+    
+                    # save image
+                    cropped_resized_mask_img = array_to_img(cropped_resized_mask,
+                                                            data_format=None, 
+                                                            scale=True)
+                    cropped_resized_mask_img.save(predicted_mask_path)
+    
+                elif dataset == 'mesa':
+                    predicted_mask_path = re.sub("MESA_set1_sorted/(MES0\d{6}).*\\\\([0-9]{1,3}_)(sliceloc.*)", 'MESA_mask_original_2D/\g<1>/\g<2>mask_\g<3>', img_path)
+                    
+                    # save txt file
+                    predicted_mask_txt_path = predicted_mask_path + '.txt'
+                    np.savetxt(predicted_mask_txt_path, cropped_resized_mask.reshape((cropped_resized_mask.shape[0],-1)), fmt='%.6f') #hope this is fine
+    
+                    # save image
+                    cropped_resized_mask_img = array_to_img(cropped_resized_mask,
+                                                            data_format=None, 
+                                                            scale=True)
+                    cropped_resized_mask_img.save(predicted_mask_path + '.png')
 
 
 
 if __name__ == '__main__':
-    predict_roi_net()
+    # predict_roi_net()
+    predict_roi_net('mesa')
 
 

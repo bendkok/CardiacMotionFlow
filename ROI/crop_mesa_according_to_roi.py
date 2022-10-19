@@ -14,6 +14,7 @@ import pandas as pd
 
 import multiprocessing.pool
 from functools import partial
+
 import pydicom
 import re
 from tqdm import tqdm
@@ -44,7 +45,6 @@ def nostdout():
     sys.stdout = DummyFile(sys.stdout)
     yield
     sys.stdout = save_stdout
-
 
 # Auxiliary function
 def determine_rectangle_roi(img_path):
@@ -101,7 +101,6 @@ def key_sort_files(value):
     #from: https://stackoverflow.com/a/59175736/15147410
     """Extract numbers from string and return a tuple of the numeric values"""
     return tuple(map(int, re.findall('\d+', value)))
-
 
 def crop_according_to_roi(use_info_file=True):
     # The ratio that determines the width of the margin
@@ -290,7 +289,7 @@ def crop_according_to_roi(use_info_file=True):
                     s_t_image_file = re.sub("MESA_set1_sorted/(MES0\d{6}).*\\\\([0-9]{1,3}_)(sliceloc.*)", 'MESA_crop_2D/\g<1>/\g<2>crop_\g<3>', img_path)
                     # s_t_image_file = os.path.join(crop_2D_path, 'crop_2D_{}_{}.png'.format(str(sl).zfill(2), str(t).zfill(2)) )
                     Image.fromarray((np.rot90(crop_image_data[:, ::-1, sl, t], 3) * multiplier).astype('uint8')).save(s_t_image_file + '.png')
-    
+            
             
             """
             # Save cropped 2D labels

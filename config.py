@@ -14,6 +14,7 @@ excluded_slice_ratio = 0.2
 acdc_data_dir = 'C:/Users/benda/Documents/Jobb_Simula/CardiacMotionFlow/acdc_info/acdc_data/{}'
 # out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/"
 out_dir_mesa = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA/"
+out_dir_mad_ous = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MAD_OUS/"
 
 acdc_dilated_subjects = ['patient{}'.format(str(x).zfill(3)) for x in range(1, 21)]
 acdc_hypertrophic_subjects = ['patient{}'.format(str(x).zfill(3)) for x in range(21, 41)]
@@ -30,8 +31,8 @@ acdc_seq_instants = 10
 roi_net_initial_lr = 1e-4
 roi_net_decay_rate = 1.0
 roi_net_batch_size = 16
-# roi_net_input_img_size = 128
-roi_net_input_img_size = 256
+roi_net_input_img_size = 128
+roi_net_input_img_size_mesa = 256
 roi_net_epochs = 50
 
 

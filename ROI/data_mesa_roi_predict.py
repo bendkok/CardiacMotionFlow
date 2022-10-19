@@ -9,6 +9,12 @@ import pandas as pd
 import numpy as np
 import shutil as shu
 import config
+import re
+
+def key_sort_files(value):
+    #from: https://stackoverflow.com/a/59175736/15147410
+    """Extract numbers from string and return a tuple of the numeric values"""
+    return tuple(map(int, re.findall('\d+', value)))
 
 
 
@@ -100,7 +106,8 @@ def data_mesa_roi_predict(use_info_file=True, delete=False):
         
             
         #a list with all the frames for this patient
-        all_frames = os.listdir(original_2D_path)
+        all_frames = sorted(os.listdir(original_2D_path), key=key_sort_files)
+        
         
         if not use_info_file:
             #it seems like each patient has 20 frames for each slice, hope that's consistent
@@ -118,9 +125,11 @@ def data_mesa_roi_predict(use_info_file=True, delete=False):
         # for s in range(slices):
         for sl in range(int(round(slices * 0.1 + 0.001)), int(round(slices * 0.5 + 0.001))): #they use this long thing to decide which slices to use, not sure why
             for t in used_instants: #there's only one element here, but that might change in the future
+                # print('Numbers: {:3.0f} {:2.0f} {:2.0f}'.format(t+sl*instants, t, sl))
                 s_t_image_file = os.path.join(original_2D_path, all_frames[sl*instants+t]) #select the desired frame
                 predict_img_list.append(s_t_image_file)
-        
+        # print(predict_img_list)
+        # exit()
         
         
     

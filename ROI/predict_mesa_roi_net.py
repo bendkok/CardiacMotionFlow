@@ -36,7 +36,6 @@ import config
 import pydicom
 
 
-
 def predict_roi_net(use_info_file=True):
 
     code_path = config.code_dir
@@ -136,11 +135,8 @@ def predict_roi_net(use_info_file=True):
         for j in range(len(img_list_batch)):
             img_path = img_list_batch[j]
             #print(img_path)
-            # img_size = pil_image.open(img_path).size
-            
             subject_data = pydicom.read_file(img_path, force=True) 
             # instants = subject_data.CardiacNumberOfImages
-            
             h = subject_data.Rows #img_size[0]
             w = subject_data.Columns #img_size[1]
             size = max(h, w)
@@ -153,14 +149,10 @@ def predict_roi_net(use_info_file=True):
                                                 ((size-h)//2):((size-h)//2 + h)]
             cropped_resized_mask = np.reshape(cropped_resized_mask, newshape=(w, h, 1))
             
-            # print(img_path)
             predicted_mask_path = re.sub("MESA_set1_sorted/(MES0\d{6}).*\\\\([0-9]{1,3}_)(sliceloc.*)", 'MESA_mask_original_2D/\g<1>/\g<2>mask_\g<3>', img_path)
-            # print(predicted_mask_path)
-            # print()
-
+            
             # save txt file
             predicted_mask_txt_path = predicted_mask_path + '.txt'
-            # print(predicted_mask_txt_path)
             np.savetxt(predicted_mask_txt_path, cropped_resized_mask.reshape((cropped_resized_mask.shape[0],-1)), fmt='%.6f') #hope this is fine
 
             # save image

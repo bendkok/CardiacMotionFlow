@@ -1368,11 +1368,25 @@ class PathListIterator(Iterator):
                     x = np.zeros(self.image_shape)
             elif fname[-2:] in ['.0']:
                 # print('\nfname: ', fname)
-                if os.path.isfile(fname):
-                    x = pydicom.read_file(fname).pixel_array
-                    x = np.reshape(x, self.image_shape)
-                    # print(x.pixel_array)
-                    # exit()
+                try:
+                    if os.path.isfile(fname):
+                        x = pydicom.read_file(fname).pixel_array
+                        x = np.reshape(x, self.image_shape)
+                except ValueError:
+                    if os.path.isfile(fname):
+                        subject_data = pydicom.read_file(fname, force=True)
+                        
+                        # img = load_img2(fname,
+                        #                grayscale=grayscale,
+                        #                target_size=self.target_size,
+                        #                pad_to_square=self.pad_to_square,
+                        #                resize_mode=self.resize_mode,
+                        #                histogram_based_preprocessing=self.histogram_based_preprocessing,
+                        #                clahe=self.clahe)
+                        img = pil_image.fromarray(subject_data.pixel_array)
+                    else:
+                        img = pil_image.new("L", self.target_size)
+                    x = img_to_array(img, data_format=self.data_format)
             else:
                 print(fname)
 
