@@ -22,6 +22,7 @@ from tqdm import tqdm
 import config
 
 from data_mesa_roi_predict import data_mesa_roi_predict
+from data_mad_ous_roi_predict import data_mad_ous_roi_predict
 
 import contextlib
 
@@ -134,19 +135,25 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
         subject_info = [x.strip() for x in subject_info]
         subject_info = [ y.split()[0:2] + [float(z) for z in y.split()[2:]] for y in subject_info]
         
-    elif dataset == 'mesa':
+    elif dataset in ['mesa', 'mad_ous']:
         # data_dir = "C:\\Users\\benda\\Documents\\Jobb_Simula\\MAD_motion\\MESA_set1_sorted\\{}" #config.acdc_data_dir
-        out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA/" 
+        if dataset == 'mesa':
+            out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA/" 
+            info_file = os.path.join(out_dir, 'MESA_info.xlsx')
+            predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths = data_mesa_roi_predict(use_info_file, delete=False)
+        elif dataset == 'mad_ous':
+            out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MAD_OUS/" 
+            info_file = os.path.join(out_dir, 'MAD_OUS_info.xlsx')
+            predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths = data_mad_ous_roi_predict(use_info_file, delete=False)
+            
         # code_dir = config.code_dir
-        
-        predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths = data_mesa_roi_predict(use_info_file, delete=False)
-    
+ 
         #we have 100 subject so far, for now I'm setting all of them to be training set
         # train_subjects = ['MES00{}01'.format(str(x).zfill(3)) for x in range(100)] # dilated_subjects + hypertrophic_subjects + infarct_subjects + normal_subjects + rv_subjects
     
         # all_subjects = train_subjects #+ test_subjects
     
-        info_file = os.path.join(out_dir, 'MESA_info.xlsx')
+        
         excel_data = pd.read_excel(info_file)
         data = pd.DataFrame(excel_data, columns=['Subject', 'Direcory', 'Filepath', 'ED', 'ES', 'Slices', 'Instants'])
     
@@ -292,19 +299,26 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                             Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, s]), 3) * 50).astype('uint8')).save(s_t_label_file)
 
 
-    elif dataset == 'mesa': #todo: make this cleaner
+    elif dataset in ['mesa', 'mad_ous']: #todo: make this cleaner
         for s,subject in enumerate(tqdm(all_subjects, file=sys.stdout)):
             with nostdout():
                 print(subject)
                 subject_dir = original_2D_paths[s]
                 # subject_dir_frames = os.listdir(subject_dir)
-                subject_mask_original_dir = os.path.join(out_dir, 'MESA_mask_original_2D', subject)
+                if dataset == 'mesa':
+                    dataset_name = 'MESA'
+                    sub_key = "MESA_set1_sorted/(MES0\d{6}).*/([0-9]{1,3}_)(sliceloc.*)"
+                    sub_rep = 'MESA_crop_2D/\g<1>/\g<2>crop_\g<3>'
+                elif dataset == 'mad_ous':
+                    dataset_name = 'MAD_OUS'
+                    sub_key = "MAD_OUS_sorted/([0-9]+)/cine.+/([0-9]{1,3}_)_sliceloc_(.*)"
+                    sub_rep = 'MAD_OUS_crop_2D/\g<1>/\g<2>crop_\g<3>'
                 
-                crop_2D_path = os.path.join(out_dir, 'MESA_crop_2D', subject)
+                subject_mask_original_dir = os.path.join(out_dir, f'{dataset_name}_mask_original_2D', subject)
+                crop_2D_path = os.path.join(out_dir, f'{dataset_name}_crop_2D', subject)
                 if not os.path.exists(crop_2D_path):
                     os.makedirs(crop_2D_path)
                 
-                # subject_data = pydicom.read_file(os.path.join(subject_dir, subject_dir_frames[0]))
                 
                 instants = instants_list[s] # subject_data.CardiacNumberOfImages #int([x for x in subject_info if x[0] == subject][0][2])
                 #for now I've just set ed/es to be the first and last frames. Don't think that's the best option
@@ -312,11 +326,9 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                 es_instant = es_list[s] # len(subject_dir_frames) -1 
                 slices = slices_list[s] # int(len(subject_dir_frames)/20) #int([x for x in subject_info if x[0] == subject][0][5])
         
-                # used_instants_roi = [ed_instant]
         
                 img_path_list = os.listdir(subject_mask_original_dir)[::2]
                 img_path_list = [os.path.join(subject_mask_original_dir, img) for img in img_path_list]
-                # print(img_path_list)
                 
                 # for t in used_instants_roi:
                 #     for s in range(int(round(slices * 0.1 + 0.001)), int(round(slices * 0.5 + 0.001))):
@@ -376,6 +388,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                         image_file = os.path.join(subject_dir, dir_cont[i+sl*instants])
                         # image_file = os.path.join(subject_dir, os.listdir(subject_dir)[i*slices+sl])
                         image_load = pydicom.read_file(image_file, force=True) 
+                        # print(image_file)
                         image_data[:,:,sl,i] = image_load.pixel_array
                 
                 # exit()
@@ -394,7 +407,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                             :, 
                             :]
                 crop_image_data = crop_image_data[::-1, ::-1, :, :]
-                crop_image_file = os.path.join(out_dir, 'MESA_crop_2D', 'crop_{}_4d.nii.gz'.format(subject))
+                crop_image_file = os.path.join(out_dir, f'{dataset_name}_crop_2D', 'crop_{}_4d.nii.gz'.format(subject))
                 nib.save(nib.Nifti1Image(crop_image_data, np.eye(4)), crop_image_file)
                 
                 
@@ -439,11 +452,9 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                 for sl in range(slices):
                     # for i in [ed_instant, es_instant+1]:
                     for i in range(instants):
-                        # img_path = os.path.join(subject_dir, os.listdir(subject_dir)[i+sl*instants])
                         img_path = all_files[i+sl*instants]
-                        # img_path = all_files[i*slices+sl]
-                        s_t_image_file = re.sub("MESA_set1_sorted/(MES0\d{6}).*\\\\([0-9]{1,3}_)(sliceloc.*)", 'MESA_crop_2D/\g<1>/\g<2>crop_\g<3>', img_path)
-                        # s_t_image_file = os.path.join(crop_2D_path, 'crop_2D_{}_{}.png'.format(str(sl).zfill(2), str(i).zfill(2)) )
+                        img_path = img_path.replace('\\', '/')
+                        s_t_image_file = re.sub(sub_key, sub_rep, img_path)
                         Image.fromarray((np.rot90(crop_image_data[:, ::-1, sl, i], 3) * multiplier).astype('uint8')).save(s_t_image_file + '.png')
             
         
@@ -455,7 +466,8 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
 
 if __name__ == '__main__':
     # crop_according_to_roi()
-    crop_according_to_roi('mesa')
+    # crop_according_to_roi('mesa')
+    crop_according_to_roi('mad_ous')
 
 
 

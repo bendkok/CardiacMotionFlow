@@ -46,6 +46,7 @@ from image2 import (
 
 from data_lvrv_segmentation_propagation_acdc import data_lvrv_segmentation_propagation_acdc
 from data_mesa_lvrv_segmentation_propagation_acdc import data_mesa_lvrv_segmentation_propagation_acdc
+from data_mad_ous_lvrv_segmentation_propagation_acdc import data_mad_ous_lvrv_segmentation_propagation_acdc
 
 from module_lvrv_net import net_module
 
@@ -111,6 +112,8 @@ def predict_lvrv_net(dataset = 'acdc'):
         seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_lvrv_segmentation_propagation_acdc(mode = mode, fold = fold)
     elif dataset == 'mesa':
         seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_mesa_lvrv_segmentation_propagation_acdc(mode = mode, fold = fold)
+    elif dataset == 'mad_ous':
+        seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_mad_ous_lvrv_segmentation_propagation_acdc(mode = mode, fold = fold)
     else:
         print("Unkown dataset.")
         raise 
@@ -160,7 +163,7 @@ def predict_lvrv_net(dataset = 'acdc'):
 
     print('Start prediction')
     print('There will be {} sequences'.format(predict_sequence) )
-
+    failed_segs = 0
     
     for i in tqdm(range(predict_sequence), file=sys.stdout):
         with nostdout():
@@ -276,6 +279,7 @@ def predict_lvrv_net(dataset = 'acdc'):
                 if not success:
                     prediction_resized = 0 * prediction_resized
                     print('Unsuccessful segmentation for {}'.format(imgs[j]))
+                    failed_segs += 1
                 else:
                     prediction_resized = keep_largest_components(prediction_resized, keep_values=[1, 2, 3], values=[1, 2, 3])
                 
@@ -297,12 +301,15 @@ def predict_lvrv_net(dataset = 'acdc'):
 
     K.clear_session()
     print("Segmentation prediction done!")
+    # print(f"There were {failed_segs} failed segmentations out of a total of {predict_sequence*len(imgs)}.")
+    print(f"{failed_segs} out of {predict_sequence*len(imgs)} segmentations were unsuccessful.")
 
 
 
 if __name__ == '__main__':
-    predict_lvrv_net("mesa")
     # predict_lvrv_net()
+    # predict_lvrv_net("mesa")
+    predict_lvrv_net("mad_ous")
 
 
 

@@ -1369,20 +1369,14 @@ class PathListIterator(Iterator):
             elif fname[-2:] in ['.0']:
                 # print('\nfname: ', fname)
                 try:
+                    sadf = 1
                     if os.path.isfile(fname):
                         x = pydicom.read_file(fname).pixel_array
                         x = np.reshape(x, self.image_shape)
                 except ValueError:
+                    sadf = 2
                     if os.path.isfile(fname):
                         subject_data = pydicom.read_file(fname, force=True)
-                        
-                        # img = load_img2(fname,
-                        #                grayscale=grayscale,
-                        #                target_size=self.target_size,
-                        #                pad_to_square=self.pad_to_square,
-                        #                resize_mode=self.resize_mode,
-                        #                histogram_based_preprocessing=self.histogram_based_preprocessing,
-                        #                clahe=self.clahe)
                         img = pil_image.fromarray(subject_data.pixel_array)
                     else:
                         img = pil_image.new("L", self.target_size)
@@ -1392,9 +1386,10 @@ class PathListIterator(Iterator):
 
             x = self.image_data_generator2.random_transform(x)
             x = self.image_data_generator2.standardize(x)
-            # print(batch_x[i].shape, x.shape)
+            # print(str(batch_x.shape) + str(x.shape) + str(x.shape) )
             # exit()
-            batch_x[i] = x
+            
+            batch_x[i,:x.shape[0],:x.shape[1]] = x
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir and ((self.batch_count % self.save_period) == 0):
             for i in range(current_batch_size):

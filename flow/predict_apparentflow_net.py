@@ -40,6 +40,7 @@ from image2 import (
 )
 from data_apparentflow import data_apparentflow
 from data_mesa_apparentflow import data_mesa_apparentflow
+from data_mad_ous_apparentflow import data_mad_ous_apparentflow
 
 from module_apparentflow_net import net_module
 
@@ -86,6 +87,8 @@ def predict_apparentflow_net(dataset = 'acdc'):
         img_list0, img_list1, seg_list0, seg_list1 = data_apparentflow(mode=mode, fold = fold)
     elif dataset == 'mesa':
         img_list0, img_list1, seg_list0, seg_list1 = data_mesa_apparentflow(mode=mode, fold = fold)
+    elif dataset == 'mad_ous':
+        img_list0, img_list1, seg_list0, seg_list1 = data_mad_ous_apparentflow(mode=mode, fold = fold)
     else:
         print("Unkown dataset.")
         raise 
@@ -219,6 +222,16 @@ def predict_apparentflow_net(dataset = 'acdc'):
             new_dir1 = '/MESA_predict_2D/'
             orgi_file1 = '_crop_'
             new_file1 = '_predict_flow_warp2_'
+        elif dataset == 'mad_ous':
+            orgi_dir0 = '/MAD_OUS_crop_2D/'
+            new_dir0 = '/MAD_OUS_predict_2D/'
+            orgi_file0 = '_crop_'
+            new_file0 = '_flow2_'
+            
+            orgi_dir1 = '/MAD_OUS_crop_2D/'
+            new_dir1 = '/MAD_OUS_predict_2D/'
+            orgi_file1 = '_crop_'
+            new_file1 = '_predict_flow_warp2_'
             
             # if not os.path.exists(re.sub("(.*/MESA_predict_2D/MES\d{7}).*", "\g<1>", save_path)):
             #     os.mkdir(re.sub("(.*/MESA_predict_2D/MES\d{7}).*", "\g<1>", save_path))
@@ -263,8 +276,9 @@ def predict_apparentflow_net(dataset = 'acdc'):
 
 
 if __name__ == '__main__':
-    predict_apparentflow_net('mesa')
     # predict_apparentflow_net()
+    # predict_apparentflow_net('mesa')
+    predict_apparentflow_net('mad_ous')
 
 
 
