@@ -465,9 +465,9 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
 
 
 if __name__ == '__main__':
-    # crop_according_to_roi()
+    crop_according_to_roi()
     # crop_according_to_roi('mesa')
-    crop_according_to_roi('mad_ous')
+    # crop_according_to_roi('mad_ous')
 
 
 

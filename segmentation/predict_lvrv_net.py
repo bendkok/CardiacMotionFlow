@@ -307,9 +307,9 @@ def predict_lvrv_net(dataset = 'acdc'):
 
 
 if __name__ == '__main__':
-    # predict_lvrv_net()
+    predict_lvrv_net()
     # predict_lvrv_net("mesa")
-    predict_lvrv_net("mad_ous")
+    # predict_lvrv_net("mad_ous")
 
 
 

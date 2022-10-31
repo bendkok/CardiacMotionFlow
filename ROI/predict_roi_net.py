@@ -197,7 +197,8 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
                 # reshape and crop the predicted mask to the original size
                 # print(binarized_predict_masks.shape)
                 # print(binarized_predict_masks[j,:size,:size].shape)
-                mask = np.reshape(binarized_predict_masks[j,:size,:size], newshape=(size, size))
+                # mask = np.reshape(binarized_predict_masks[j,:size,:size], newshape=(size, size))
+                mask = np.reshape(binarized_predict_masks[j], newshape=(input_img_size, input_img_size))
                 # print(mask.shape)
                 # print(size)
                 # resized_mask = scipy.misc.imresize(mask, size=(size, size), interp='nearest')/255.0
@@ -255,8 +256,8 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
 
 
 if __name__ == '__main__':
-    # predict_roi_net()
+    predict_roi_net()
     # predict_roi_net('mesa')
-    predict_roi_net('mad_ous')
+    # predict_roi_net('mad_ous')
 
 

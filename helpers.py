@@ -1095,10 +1095,15 @@ def dice_coef_loss(y_true, y_pred, smooth=0.0):
 def dice_coef2(y_true, y_pred, smooth=1.0):
     #y_true_f = K.flatten(y_true)
     y_true = tf.where(y_true > 0.5, K.ones_like(y_true), K.zeros_like(y_true))
+    # y_true = tf.where(y_true > 0.5, K.ones_like(y_true, dtype=np.int32), K.zeros_like(y_true, dtype=np.int32))
     #y_pred_f = K.flatten(y_pred)
+    # try:
     intersection = K.sum(y_true * y_pred, axis=[1,2,3])
-    sum = K.sum(y_true, axis=[1,2,3]) + K.sum(y_pred, axis=[1,2,3])
-    return K.mean((2. * intersection + smooth) / (sum + smooth), axis=0)
+    sum0 = K.sum(y_true, axis=[1,2,3]) + K.sum(y_pred, axis=[1,2,3])
+    # except:
+    #     intersection = K.sum(y_true * y_pred, axis=[1,2])
+    #     sum0 = K.sum(y_true, axis=[1,2]) + K.sum(y_pred, axis=[1,2])
+    return K.mean((2. * intersection + smooth) / (sum0 + smooth), axis=0)
 
 
 def dice_coef2_loss(y_true, y_pred, smooth=1.0):
@@ -1109,8 +1114,8 @@ def jaccard_coef2(y_true, y_pred, smooth=0.0):
     y_true = tf.where(y_true > 0.5, K.ones_like(y_true), K.zeros_like(y_true))
     #y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true * y_pred, axis=[1,2,3])
-    sum = K.sum(y_true * y_true, axis=[1,2,3]) + K.sum(y_pred * y_pred, axis=[1,2,3])
-    return K.mean((1.0 * intersection + smooth) / (sum - intersection + smooth), axis=0)
+    sum0 = K.sum(y_true * y_true, axis=[1,2,3]) + K.sum(y_pred * y_pred, axis=[1,2,3])
+    return K.mean((1.0 * intersection + smooth) / (sum0 - intersection + smooth), axis=0)
 
 
 def jaccard_coef2_loss(y_true, y_pred, smooth=0.0):
