@@ -151,6 +151,13 @@ python segmentation/prediction_lvrv_net.py f
 ```
 - segmentation/predict_lvrv_net.py: the main file to launch the prediction
 
+#### IV.3 Calculate Dice-score
+Run:
+```
+python segmentation/calculate_dice_segmentation.py
+```
+- segmentation/calculate_dice_segmentation.py: the main file to launch the prediction
+
 
 
 ### V. Feature Extraction
