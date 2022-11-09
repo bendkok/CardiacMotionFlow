@@ -113,7 +113,7 @@ def predict_lvrv_net(dataset = 'acdc'):
     elif dataset == 'mesa':
         seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_mesa_lvrv_segmentation_propagation_acdc(mode = mode, fold = fold)
     elif dataset == 'mad_ous':
-        seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_mad_ous_lvrv_segmentation_propagation_acdc(mode = mode, fold = fold)
+        seq_context_imgs, seq_context_segs, seq_imgs, seq_segs, gt = data_mad_ous_lvrv_segmentation_propagation_acdc(mode = mode, fold = fold)
     else:
         print("Unkown dataset.")
         raise 
@@ -307,9 +307,9 @@ def predict_lvrv_net(dataset = 'acdc'):
 
 
 if __name__ == '__main__':
-    predict_lvrv_net()
+    # predict_lvrv_net()
     # predict_lvrv_net("mesa")
-    # predict_lvrv_net("mad_ous")
+    predict_lvrv_net("mad_ous")
 
 
 

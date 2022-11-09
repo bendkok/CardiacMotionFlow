@@ -100,7 +100,7 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
         predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths = data_mesa_roi_predict(use_info_file, True)
         subject_dir_list = sorted(subject_dir_list, key=key_sort_files)
     elif dataset == 'mad_ous':
-        predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths = data_mad_ous_roi_predict(use_info_file, True)
+        predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths, gt = data_mad_ous_roi_predict(use_info_file, True)
         subject_dir_list = sorted(subject_dir_list, key=key_sort_files)
     else:
         print("Unknown dataset.")
@@ -256,8 +256,8 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
 
 
 if __name__ == '__main__':
-    predict_roi_net()
+    # predict_roi_net()
     # predict_roi_net('mesa')
-    # predict_roi_net('mad_ous')
+    predict_roi_net('mad_ous')
 
 

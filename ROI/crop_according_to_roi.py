@@ -144,7 +144,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
         elif dataset == 'mad_ous':
             out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MAD_OUS/" 
             info_file = os.path.join(out_dir, 'MAD_OUS_info.xlsx')
-            predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths = data_mad_ous_roi_predict(use_info_file, delete=False)
+            predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths, has_gt = data_mad_ous_roi_predict(use_info_file, delete=False)
             
         # code_dir = config.code_dir
  
@@ -159,7 +159,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
     
         
         all_subjects = data.Subject.to_numpy(dtype=str) #list of the subjects
-        # train_subjects = all_subjects # todo: change
+        train_subjects = all_subjects[np.where(has_gt==1)[0]] # todo: change
         
         # subject_dir_list = data.Direcory.to_numpy(dtype=str) #list of directory for each of the subjects
         original_2D_paths = data.Filepath.to_numpy(dtype=str) #list of directories where the files we use are
@@ -302,7 +302,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
     elif dataset in ['mesa', 'mad_ous']: #todo: make this cleaner
         for s,subject in enumerate(tqdm(all_subjects, file=sys.stdout)):
             with nostdout():
-                print(subject)
+                print(f"Subject: {subject}")
                 subject_dir = original_2D_paths[s]
                 # subject_dir_frames = os.listdir(subject_dir)
                 if dataset == 'mesa':
@@ -389,7 +389,11 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                         # image_file = os.path.join(subject_dir, os.listdir(subject_dir)[i*slices+sl])
                         image_load = pydicom.read_file(image_file, force=True) 
                         # print(image_file)
-                        image_data[:,:,sl,i] = image_load.pixel_array
+                        try:
+                            image_data[:,:,sl,i] = image_load.pixel_array
+                        except:
+                            print(image_file)
+
                 
                 # exit()
                 original_r_min = max(0, crop_r_min)
@@ -412,11 +416,12 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                 
                 
                 
-                """
+                
                 # Crop the original labels
                 if subject in train_subjects:
+                    print(f"Training subjects: {subject}.")
                     for i in [ed_instant+1, es_instant+1]:
-                        label_file = os.path.join(subject_dir, '{}_frame{}_gt.nii.gz'.format(subject,str(i).zfill(2)))
+                        label_file = os.path.join(out_dir, 'MAD_OUS_gt', '{}_frame{}_gt.nii.gz'.format(subject,str(i).zfill(2)))
                         label_load = nib.load(label_file)
                         label_data = label_load.get_data()
                         crop_label_data = np.zeros((roi_length + 2 * pixel_margin, 
@@ -429,10 +434,10 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                             original_c_min:(original_c_max + 1), 
                             :]
                         crop_label_data = crop_label_data[::-1, ::-1, :]
-                        crop_label_file = os.path.join(subject_dir,
+                        crop_label_file = os.path.join(out_dir, 'MAD_OUS_crop_2D',
                             'crop_{}_frame{}_gt.nii.gz'.format(subject,str(i).zfill(2)))
                         nib.save(nib.Nifti1Image(crop_label_data, np.eye(4)), crop_label_file)
-                """
+                
         
             
                 # Save cropped 2D images
@@ -456,6 +461,20 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                         img_path = img_path.replace('\\', '/')
                         s_t_image_file = re.sub(sub_key, sub_rep, img_path)
                         Image.fromarray((np.rot90(crop_image_data[:, ::-1, sl, i], 3) * multiplier).astype('uint8')).save(s_t_image_file + '.png')
+                        
+                        if i in [ed_instant, es_instant] and subject in train_subjects:
+                            crop_label_file = os.path.join(out_dir, 'MAD_OUS_crop_2D', 
+                                'crop_{}_frame{}_gt.nii.gz'.format(subject,str(i+1).zfill(2)))
+                            crop_label_data = nib.load(crop_label_file).get_data()
+                            s_t_label_file = s_t_image_file.replace('crop_', 'crop_gt_').replace('_gt_2D/', '_2D/')
+                            # s_t_label_file = s_t_label_file
+                            Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, sl]), 3) * 50).astype('uint8')).save(s_t_label_file + '.png')
+                # Save cropped 2D labels
+                # if subject in train_subjects:
+                #     for s in range(slices):
+                #         # print(f"Training subjects: {subject}.")
+                #         for t in [ed_instant, es_instant]:
+                            
             
         
     
@@ -465,9 +484,9 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
 
 
 if __name__ == '__main__':
-    crop_according_to_roi()
+    # crop_according_to_roi()
     # crop_according_to_roi('mesa')
-    # crop_according_to_roi('mad_ous')
+    crop_according_to_roi('mad_ous')
 
 
 

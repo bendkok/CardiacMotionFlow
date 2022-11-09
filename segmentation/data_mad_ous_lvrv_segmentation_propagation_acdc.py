@@ -29,7 +29,7 @@ def data_mad_ous_lvrv_segmentation_propagation_acdc(mode='all', fold = 1, use_da
     if use_data_file:
         info_file = os.path.join(out_dir, 'MAD_OUS_info.xlsx') #todo: change to be function-input, with None as default
         excel_data = pd.read_excel(info_file)
-        data = pd.DataFrame(excel_data, columns=['Subject', 'Direcory', 'Filepath', 'ED', 'ES', 'Slices', 'Instants'])
+        data = pd.DataFrame(excel_data, columns=['Subject', 'Direcory', 'Filepath', 'ED', 'ES', 'Slices', 'Instants', 'GT'])
         
         all_subjects = data.Subject.to_numpy(dtype=str) #list of the subjects
         subject_dir_list = data.Direcory.to_numpy(dtype=str) #list of directory for each of the subjects
@@ -39,6 +39,7 @@ def data_mad_ous_lvrv_segmentation_propagation_acdc(mode='all', fold = 1, use_da
         ed_list = data.ED.to_numpy(dtype=int)
         es_list = data.ES.to_numpy(dtype=int)
         slices_list = data.Slices.to_numpy(dtype=int)
+        gt = data.GT.to_numpy(dtype=int)
         
         test_subjects = all_subjects
         
@@ -96,7 +97,8 @@ def data_mad_ous_lvrv_segmentation_propagation_acdc(mode='all', fold = 1, use_da
         pred_dir = subject_dir.replace('MAD_OUS_crop_2D', 'MAD_OUS_predict_2D')
         os.makedirs(pred_dir, exist_ok=True)
         
-        files = sorted(os.listdir(subject_dir), key=key_sort_files)
+        files = [cur for cur in os.listdir(subject_dir) if 'crop_gt' not in cur]
+        files = sorted(files, key=key_sort_files)
 
         for t in [ed_instant, es_instant]:
             # context_imgs = []
@@ -113,11 +115,21 @@ def data_mad_ous_lvrv_segmentation_propagation_acdc(mode='all', fold = 1, use_da
                 context_seg = [i.replace("_crop_", "_predict_lvrv2_") for i in context_seg]
             img = files[t::instants]
             img = [os.path.join(subject_dir, i) for i in img]
-            if mode in ['all', 'train', 'val']:    
-                seg = [""]*instants #todo: add later
+            if mode in ['all', 'train', 'val']:  
+                if gt[s] == 1:
+                    context_seg = []
+                    seg = []
+                    for i in range(slices):
+                    # for i in range(start_slice, end_slice):
+                        if i == start_slice: #why is this done?
+                            i_minus = -1
+                        else:
+                            i_minus = i - 1
+                        context_seg.append( os.path.join(subject_dir, 'crop_2D_gt_{}_{}.png'.format(str(i_minus).zfill(2), str(t).zfill(2)) ) )
+                        seg.append( os.path.join(subject_dir, 'crop_2D_gt_{}_{}.png'.format(str(i).zfill(2), str(t).zfill(2)) ) )  # [""]*instants #todo: add later
             elif mode in ['predict', 'val_predict']:
                 seg = [i.replace("MAD_OUS_crop_2D", "MAD_OUS_predict_lvrv_2D") for i in img]
-                seg = [i.replace("_crop_", "_predict_lvrv2_") for i in seg]
+                seg = [i.replace("_crop_", "_predict_lvrv2_") for i in seg]  #todo: something iffy here or on line 129
             
             seq_context_imgs_no_group += context_img
             seq_context_segs_no_group += context_seg
@@ -166,14 +178,14 @@ def data_mad_ous_lvrv_segmentation_propagation_acdc(mode='all', fold = 1, use_da
                 
 
     if mode in ['all', 'train', 'val']:
-        return seq_context_imgs_no_group, seq_context_segs_no_group, seq_imgs_no_group, seq_segs_no_group
+        return seq_context_imgs_no_group, seq_context_segs_no_group, seq_imgs_no_group, seq_segs_no_group, gt
     elif mode in ['predict', 'val_predict']:
-        return seq_context_imgs, seq_context_segs, seq_imgs, seq_segs
+        return seq_context_imgs, seq_context_segs, seq_imgs, seq_segs, gt
         
 
 if __name__ == '__main__':
     
     res = data_mad_ous_lvrv_segmentation_propagation_acdc("predict")
-    # print(len(res[0]), len(res[0][0]))
+    print(len(res[0]), len(res[0][0]))
     # print(res[0][0])
 
