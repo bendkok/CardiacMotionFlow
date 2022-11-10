@@ -272,13 +272,13 @@ def predict_apparentflow_net(dataset = 'acdc'):
         
 
     K.clear_session()
-    print('Apparent flow prediction is done!')
+    print('\nApparent flow prediction is done!')
 
 
 if __name__ == '__main__':
-    predict_apparentflow_net()
+    # predict_apparentflow_net()
     # predict_apparentflow_net('mesa')
-    # predict_apparentflow_net('mad_ous')
+    predict_apparentflow_net('mad_ous')
 
 
 

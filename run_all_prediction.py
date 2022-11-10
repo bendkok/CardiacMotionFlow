@@ -30,4 +30,4 @@ def run_all_prediction(dataset='acdc'):
 
 if __name__ == '__main__':
     run_all_prediction()
-    run_all_prediction('mad_ous')
+    # run_all_prediction('mad_ous')

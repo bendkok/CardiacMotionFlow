@@ -22,7 +22,7 @@ from segmentation.data_mesa_lvrv_segmentation_propagation_acdc import data_mesa_
 from segmentation.data_mad_ous_lvrv_segmentation_propagation_acdc import data_mad_ous_lvrv_segmentation_propagation_acdc
 
 
-def dice_coef2(y_true, y_pred, smooth=.0):
+def dice_coef2(y_true, y_pred, smooth=1.0):
     #y_true_f = K.flatten(y_true)
     y_true_f = tf.where(y_true > 0.5, K.ones_like(y_true), K.zeros_like(y_true))
     y_pred_f = tf.where(y_pred > 0.5, K.ones_like(y_pred), K.zeros_like(y_pred))
@@ -51,7 +51,7 @@ def key_sort_files(value):
     return tuple(map(int, re.findall('\d+', value)))
 
 
-def calculate_dice_segmentation(dataset = 'acdc'):
+def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
     
     fold = 1 #int(sys.argv[1])
     # print('fold = {}'.format(fold))
@@ -83,11 +83,14 @@ def calculate_dice_segmentation(dataset = 'acdc'):
         
         for_over = range(len(seq_segs_pre_train))
         subjects = ['patient{}'.format(str(x).zfill(3)) for x in range(1, 101)]#.append("All")
+        subjects.append("All mean")
         subjects.append("All")
     
         
     elif dataset == 'mesa':
         seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_mesa_lvrv_segmentation_propagation_acdc(mode = mode, fold = fold)
+        print("Not implemeted.")
+        exit
     elif dataset == 'mad_ous':
         seq_context_imgs, seq_context_segs, seq_imgs, seq_segs0, gt = data_mad_ous_lvrv_segmentation_propagation_acdc(mode = 'predict', fold = fold)
         # seq_context_imgs, seq_context_segs, seq_imgs, seq_segs1, gt = data_mad_ous_lvrv_segmentation_propagation_acdc(mode = 'all', fold = fold)
@@ -108,6 +111,7 @@ def calculate_dice_segmentation(dataset = 'acdc'):
         excel_data = pd.read_excel(info_file)
         subjects = pd.DataFrame(excel_data, columns=['Subject']).to_numpy().flatten()[np.where(gt==1)[0]].tolist()
         # subjects = np.array(["4","17","35","58","75","97","107","129","141","169"])[np.where(gt==1)[0]].tolist()
+        subjects.append("All mean")
         subjects.append("All")
         # print(subjects)
         
@@ -146,7 +150,7 @@ def calculate_dice_segmentation(dataset = 'acdc'):
             # print(f'{i}, {frame}: segs_pre_im: {K.sum(segs_pre_im)}') if K.sum(segs_pre_im) == 0 else False
             # print(f'{i}, {frame}: segs_gt_im: {K.sum(segs_gt_im)}') if K.sum(segs_gt_im) == 0 else False
             
-            dice = dice_coef2(segs_gt_im, segs_pre_im).numpy()
+            dice = dice_coef2(segs_gt_im, segs_pre_im, smooth=smooth).numpy()
 
             # if not np.isnan(dice) and dice != 1.:
             if not np.isnan(dice):
@@ -167,6 +171,21 @@ def calculate_dice_segmentation(dataset = 'acdc'):
 
     #     curr_dice2 = dice_coef2(segs_gt_im, segs_pre_im).numpy()
     #     dice_scores_test.append(curr_dice2)
+    
+    dice_flat = [item for sublist in dice_scores_train for item in sublist]
+    dice_mean = [np.mean(sublist) for sublist in dice_scores_train]
+    dice_scores_train.append(dice_mean)
+    dice_scores_train.append(dice_flat)
+    df = pd.DataFrame(dice_scores_train, index=subjects).transpose()
+    print()
+    des = df.describe()
+    pd.set_option('display.max_columns', 12)
+    pd.set_option('display.width', 1000)
+    print(des)
+    path = config.out_dir_mad_ous
+    text_file = open(path + f"/dice_res_{dataset}.csv", "w")
+    n = text_file.write(str(des))
+    text_file.close()
         
     return dice_scores_train, subjects #, dice_scores_test
 
@@ -175,29 +194,6 @@ if __name__ == '__main__':
     #I think dice_coef2 is the correct one
     # dice, subjects = calculate_dice_segmentation()
     dice, subjects = calculate_dice_segmentation('mad_ous')
-    # print(dice)    
-    dice_flat = [item for sublist in dice for item in sublist]
-    dice.append(dice_flat)
-    df = pd.DataFrame(dice, index=subjects).transpose()
-    # df.columns(subjects)
-    print()
-    des = df.describe()
-    pd.set_option('display.max_columns', 11)
-    pd.set_option('display.width', 1000)
-    print(des)
-    path = config.out_dir_mad_ous
-    text_file = open(path + "/dice_res.csv", "w")
-    n = text_file.write(str(des))
-    text_file.close()
     
-    # print()
-    # print(dice[1])    
-    # df = pd.DataFrame(dice[1])
-    # print(df.describe())
-    # print(np.where(np.array(dice[0]) - np.array(dice[1]) < 1e-1)[0], len(np.where(np.array(dice[0]) - np.array(dice[1]) < 1e-1)[0]))
-    # print(np.where(np.array(dice[0]) - np.array(dice[1]) < 1e-2)[0], len(np.where(np.array(dice[0]) - np.array(dice[1]) < 1e-2)[0]))
-    # print(np.where(np.array(dice[0]) - np.array(dice[1]) < 1e-3)[0], len(np.where(np.array(dice[0]) - np.array(dice[1]) < 1e-3)[0]))
-    # print()
-    # print(np.array(dice[1]) / np.array(dice[0]))
-    # print(len(dice[0]), len(dice[1]))
+    
     
