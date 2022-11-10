@@ -14,10 +14,15 @@ from segmentation.calculate_dice_segmentation import calculate_dice_segmentation
 
 def run_all_prediction(dataset='acdc'):
     
+    print("Running predict_roi_net:")
     predict_roi_net(dataset=dataset)
+    print("\n\n\nRunning crop_according_to_roi:")
     crop_according_to_roi(dataset=dataset)
+    print("\n\n\nRunning predict_apparentflow_net:")
     predict_apparentflow_net(dataset=dataset)
+    print("\n\n\nRunning predict_lvrv_net:")
     predict_lvrv_net(dataset=dataset)
+    print("\n\n\nRunning calculate_dice_segmentation:")
     calculate_dice_segmentation(dataset=dataset)
     
     
