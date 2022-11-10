@@ -13,6 +13,8 @@ from keras import backend as K
 import pandas as pd
 import re
 import config
+import os
+
 
 from helpers import dice_coef
 from segmentation.data_lvrv_segmentation_propagation_acdc import data_lvrv_segmentation_propagation_acdc
@@ -20,7 +22,7 @@ from segmentation.data_mesa_lvrv_segmentation_propagation_acdc import data_mesa_
 from segmentation.data_mad_ous_lvrv_segmentation_propagation_acdc import data_mad_ous_lvrv_segmentation_propagation_acdc
 
 
-def dice_coef2(y_true, y_pred, smooth=1.0):
+def dice_coef2(y_true, y_pred, smooth=.0):
     #y_true_f = K.flatten(y_true)
     y_true_f = tf.where(y_true > 0.5, K.ones_like(y_true), K.zeros_like(y_true))
     y_pred_f = tf.where(y_pred > 0.5, K.ones_like(y_pred), K.zeros_like(y_pred))
@@ -101,7 +103,11 @@ def calculate_dice_segmentation(dataset = 'acdc'):
         # seq_segs_gt_train = [[a.replace('MAD_OUS_predict_lvrv_2D', 'MAD_OUS_crop_2D', 1) for a in b ] for b in seq_segs_gt_train] # location
         
         for_over = np.where(gt)[0]
-        subjects = np.array(["4","17","35","58","75","97","107","129","141","169"])[np.where(gt==1)[0]].tolist()
+        out_dir = config.out_dir_mad_ous
+        info_file = os.path.join(out_dir, 'MAD_OUS_info.xlsx')
+        excel_data = pd.read_excel(info_file)
+        subjects = pd.DataFrame(excel_data, columns=['Subject']).to_numpy().flatten()[np.where(gt==1)[0]].tolist()
+        # subjects = np.array(["4","17","35","58","75","97","107","129","141","169"])[np.where(gt==1)[0]].tolist()
         subjects.append("All")
         # print(subjects)
         

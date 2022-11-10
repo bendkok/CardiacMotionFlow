@@ -38,11 +38,11 @@ from image2 import (
     array_to_img,
     ImageDataGenerator2
 )
-from data_apparentflow import data_apparentflow
-from data_mesa_apparentflow import data_mesa_apparentflow
-from data_mad_ous_apparentflow import data_mad_ous_apparentflow
+from flow.data_apparentflow import data_apparentflow
+from flow.data_mesa_apparentflow import data_mesa_apparentflow
+from flow.data_mad_ous_apparentflow import data_mad_ous_apparentflow
 
-from module_apparentflow_net import net_module
+from flow.module_apparentflow_net import net_module
 
 import config
 

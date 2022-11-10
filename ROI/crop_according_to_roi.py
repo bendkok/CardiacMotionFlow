@@ -21,8 +21,8 @@ from tqdm import tqdm
 
 import config
 
-from data_mesa_roi_predict import data_mesa_roi_predict
-from data_mad_ous_roi_predict import data_mad_ous_roi_predict
+from ROI.data_mesa_roi_predict import data_mesa_roi_predict
+from ROI.data_mad_ous_roi_predict import data_mad_ous_roi_predict
 
 import contextlib
 
@@ -138,11 +138,11 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
     elif dataset in ['mesa', 'mad_ous']:
         # data_dir = "C:\\Users\\benda\\Documents\\Jobb_Simula\\MAD_motion\\MESA_set1_sorted\\{}" #config.acdc_data_dir
         if dataset == 'mesa':
-            out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA/" 
+            out_dir = config.out_dir_mesa
             info_file = os.path.join(out_dir, 'MESA_info.xlsx')
             predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths = data_mesa_roi_predict(use_info_file, delete=False)
         elif dataset == 'mad_ous':
-            out_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MAD_OUS/" 
+            out_dir = config.out_dir_mad_ous
             info_file = os.path.join(out_dir, 'MAD_OUS_info.xlsx')
             predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths, has_gt = data_mad_ous_roi_predict(use_info_file, delete=False)
             
