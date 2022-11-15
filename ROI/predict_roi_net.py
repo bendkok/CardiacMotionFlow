@@ -189,9 +189,12 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
                     h = img_size[0]
                     w = img_size[1]
                 elif dataset in ['mesa', 'mad_ous']:
-                    subject_data = pydicom.read_file(img_path, force=True) 
-                    h = subject_data.Rows #img_size[0]
-                    w = subject_data.Columns #img_size[1]
+                    # subject_data = pydicom.read_file(img_path, force=True) 
+                    # h = subject_data.Rows #img_size[0]
+                    # w = subject_data.Columns #img_size[1]
+                    img_size = pil_image.open(img_path).size
+                    h = img_size[0]
+                    w = img_size[1]
                 size = max(h, w)
     
                 # reshape and crop the predicted mask to the original size
@@ -238,20 +241,21 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
                     cropped_resized_mask_img.save(predicted_mask_path + '.png')
                     
                 elif dataset == 'mad_ous':
-                    predicted_mask_path = re.sub("MAD_OUS_sorted/([0-9]+)/cine.+/([0-9]{1,3}_)_sliceloc_(.*)", 'MAD_OUS_mask_original_2D/\g<1>/\g<2>mask_\g<3>', img_path)
+                    # predicted_mask_path = re.sub("MAD_OUS_sorted/([0-9]+)/cine.+/([0-9]{1,3}_)_sliceloc_(.*)", 'MAD_OUS_mask_original_2D/\g<1>/\g<2>mask_\g<3>', img_path)
+                    predicted_mask_path = img_path.replace('MAD_OUS_preprocess_original_2D', 'MAD_OUS_mask_original_2D')
                     # print(img_path)
                     # print(predicted_mask_path)
                     # exit
                     
                     # save txt file
-                    predicted_mask_txt_path = predicted_mask_path + '.txt'
+                    predicted_mask_txt_path = predicted_mask_path.replace('.png', '.txt')
                     np.savetxt(predicted_mask_txt_path, cropped_resized_mask.reshape((cropped_resized_mask.shape[0],-1)), fmt='%.6f') #hope this is fine
     
                     # save image
                     cropped_resized_mask_img = array_to_img(cropped_resized_mask,
                                                             data_format=None, 
                                                             scale=True)
-                    cropped_resized_mask_img.save(predicted_mask_path + '.png')
+                    cropped_resized_mask_img.save(predicted_mask_path)
 
 
 

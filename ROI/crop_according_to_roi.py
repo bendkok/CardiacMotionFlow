@@ -18,6 +18,8 @@ from functools import partial
 import pydicom
 import re
 from tqdm import tqdm
+from PIL import Image as pil_image
+import cv2 as cv
 
 import config
 
@@ -162,7 +164,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
         train_subjects = all_subjects[np.where(has_gt==1)[0]] # todo: change
         
         # subject_dir_list = data.Direcory.to_numpy(dtype=str) #list of directory for each of the subjects
-        original_2D_paths = data.Filepath.to_numpy(dtype=str) #list of directories where the files we use are
+        # original_2D_paths = data.Filepath.to_numpy(dtype=str) #list of directories where the files we use are
         
         instants_list = data.Instants.to_numpy(dtype=int)
         ed_list = data.ED.to_numpy(dtype=int)
@@ -300,10 +302,13 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
 
 
     elif dataset in ['mesa', 'mad_ous']: #todo: make this cleaner
+    
+        clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
         for s,subject in enumerate(tqdm(all_subjects, file=sys.stdout)):
             with nostdout():
                 print(f"Subject: {subject}")
-                subject_dir = original_2D_paths[s]
+                # subject_dir = subject_dir_list[s].replace('MAD_OUS_preprocess_original_2D', 'MAD_OUS_mask_original_2D')
+                subject_dir = os.path.join(out_dir, 'MAD_OUS_preprocess_original_2D', subject+'/').replace('\\', '/')
                 # subject_dir_frames = os.listdir(subject_dir)
                 if dataset == 'mesa':
                     dataset_name = 'MESA'
@@ -367,11 +372,12 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
         
                 # Crop the original images
                 # image_file = os.path.join(subject_dir, '{}_4d.nii.gz'.format(subject))
-                subject_data = pydicom.read_file(os.path.join(subject_dir, os.listdir(subject_dir)[0]), force=True)
+                subject_data = pil_image.open(os.path.join(subject_dir, os.listdir(subject_dir)[0]))
+                # subject_data = pydicom.read_file(os.path.join(subject_dir, os.listdir(subject_dir)[0]), force=True)
                     # instants = subject_data.CardiacNumberOfImages
                     
-                h = subject_data.Rows #img_size[0]
-                w = subject_data.Columns #img_size[1]
+                h = subject_data.size[0] #Rows #
+                w = subject_data.size[1] #Columns #
                 image_data = np.zeros((w,h,slices,instants))
                 
                 # print(original_2D_paths[s])
@@ -387,10 +393,11 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                         #     print(item, i+sl*instants)
                         image_file = os.path.join(subject_dir, dir_cont[i+sl*instants])
                         # image_file = os.path.join(subject_dir, os.listdir(subject_dir)[i*slices+sl])
-                        image_load = pydicom.read_file(image_file, force=True) 
+                        # image_load = pydicom.read_file(image_file, force=True) 
+                        image_load = pil_image.open(image_file) 
                         # print(image_file)
                         try:
-                            image_data[:,:,sl,i] = image_load.pixel_array
+                            image_data[:,:,sl,i] = np.asarray(image_load) #image_load.pixel_array
                         except:
                             print(image_file)
 
@@ -459,8 +466,12 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                     for i in range(instants):
                         img_path = all_files[i+sl*instants]
                         img_path = img_path.replace('\\', '/')
-                        s_t_image_file = re.sub(sub_key, sub_rep, img_path)
-                        Image.fromarray((np.rot90(crop_image_data[:, ::-1, sl, i], 3) * multiplier).astype('uint8')).save(s_t_image_file + '.png')
+                        s_t_image_file = img_path.replace('MAD_OUS_preprocess_original_2D', 'MAD_OUS_crop_2D') #re.sub(sub_key, sub_rep, img_path)
+                        s_t_image_file = s_t_image_file.replace('_sliceloc_', 'crop_')
+                        # img = clahe.apply((crop_image_data[:, :, sl, i]).astype('uint8'))
+                        img = clahe.apply(np.rot90(crop_image_data[:, ::-1, sl, i], 3).astype('uint8'))
+                        # (np.rot90(crop_image_data[:, ::-1, sl, i], 3) * multiplier).astype('uint8')
+                        Image.fromarray(img).save(s_t_image_file) # + '.png')
                         
                         if i in [ed_instant, es_instant] and subject in train_subjects:
                             crop_label_file = os.path.join(out_dir, 'MAD_OUS_crop_2D', 
@@ -468,7 +479,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                             crop_label_data = nib.load(crop_label_file).get_data()
                             s_t_label_file = s_t_image_file.replace('crop_', 'crop_gt_').replace('_gt_2D/', '_2D/')
                             # s_t_label_file = s_t_label_file
-                            Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, sl]), 3) * 50).astype('uint8')).save(s_t_label_file + '.png')
+                            Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, sl]), 3) * 50).astype('uint8')).save(s_t_label_file)
                 # Save cropped 2D labels
                 # if subject in train_subjects:
                 #     for s in range(slices):

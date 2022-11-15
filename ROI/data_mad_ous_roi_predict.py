@@ -99,7 +99,8 @@ def data_mad_ous_roi_predict(use_info_file=True, delete=False):
             original_2D_paths.append(original_2D_path)
             
         else:
-            original_2D_path = original_2D_paths[s]
+            # original_2D_path = original_2D_paths[s]
+            original_2D_path = subject_dir_list[s].replace('MAD_OUS_sorted', 'MAD_OUS_preprocess_original_2D')
             slices = slices_list[s]
             instants = instants_list[s]
             
@@ -160,7 +161,12 @@ if __name__ == '__main__':
     #     print(o)
         
     out = data_mad_ous_roi_predict(True)
-    # # print(out)
+    # print(out)
+    print(out[0])
+    # print(out[1])
+    print(out[2])
+    print(out[3])
+    # print(out[4])
     # for o in out[0]:
     #     print(o)
 
