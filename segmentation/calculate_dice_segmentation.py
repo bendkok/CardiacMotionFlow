@@ -130,7 +130,8 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
     # print(f'Number of train subjects: {predict_sequence_train}. Number of test subjects: {predict_sequence_test}.')
     print(f'\nNumber of train subjects: {predict_sequence_train}.')
     
-    
+    n_zero = 0
+    n_segs = 0
     
     for i in for_over:    
         segs_pre = seq_segs_pre_train[i]
@@ -150,6 +151,12 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
             # print(f'{i}, {frame}: segs_pre_im: {K.sum(segs_pre_im)}') if K.sum(segs_pre_im) == 0 else False
             # print(f'{i}, {frame}: segs_gt_im: {K.sum(segs_gt_im)}') if K.sum(segs_gt_im) == 0 else False
             
+            if np.sum(segs_pre_im) == 0:
+                # print("Sum = 0.")
+                # dice = np.nan
+                n_zero += 1
+            # else:
+            n_segs += 1
             dice = dice_coef2(segs_gt_im, segs_pre_im, smooth=smooth).numpy()
 
             # if not np.isnan(dice) and dice != 1.:
@@ -172,6 +179,8 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
     #     curr_dice2 = dice_coef2(segs_gt_im, segs_pre_im).numpy()
     #     dice_scores_test.append(curr_dice2)
     
+    print(f'Number of failed segs: {n_zero} of {n_segs}, {int(100*n_zero/n_segs)}%.\n')
+    
     dice_flat = [item for sublist in dice_scores_train for item in sublist]
     dice_mean = [np.mean(sublist) for sublist in dice_scores_train]
     dice_scores_train.append(dice_mean)
@@ -186,6 +195,7 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
     text_file = open(path + f"/dice_res_{dataset}.csv", "w")
     n = text_file.write(str(des))
     text_file.close()
+    
         
     return dice_scores_train, subjects #, dice_scores_test
 
@@ -193,7 +203,7 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
 if __name__ == '__main__':
     #I think dice_coef2 is the correct one
     # dice, subjects = calculate_dice_segmentation()
-    dice, subjects = calculate_dice_segmentation('mad_ous')
+    dice, subjects = calculate_dice_segmentation('mad_ous', smooth=1.0)
     
     
     
