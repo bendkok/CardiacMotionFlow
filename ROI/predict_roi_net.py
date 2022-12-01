@@ -74,12 +74,12 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
 
     initial_lr = config.roi_net_initial_lr
     batch_size = config.roi_net_batch_size
-    if dataset == 'acdc':
-        input_img_size = config.roi_net_input_img_size
-    elif dataset in ['mesa']:
-        input_img_size = config.roi_net_input_img_size_mesa
-    elif dataset == 'mad_ous':
-        input_img_size = config.roi_net_input_img_size_mad_ous
+    # if dataset == 'acdc':
+    input_img_size = config.roi_net_input_img_size
+    # elif dataset in ['mesa']:
+    #     input_img_size = config.roi_net_input_img_size_mesa
+    # elif dataset == 'mad_ous':
+    #     input_img_size = config.roi_net_input_img_size_mad_ous
 
     epochs = config.roi_net_epochs
 
@@ -96,10 +96,12 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
     # Data
     if dataset == 'acdc':
         predict_img_list, predict_gt_list = data_roi_predict()
-    elif dataset == 'mesa':
-        predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths = data_mesa_roi_predict(use_info_file, True)
+    elif dataset in ['mesa', 'MESA']:
+        dataset_name = 'MESA'
+        predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths, gt = data_mesa_roi_predict(use_info_file, True)
         subject_dir_list = sorted(subject_dir_list, key=key_sort_files)
-    elif dataset == 'mad_ous':
+    elif dataset in ['mad_ous', 'MAD_OUS']:
+        dataset_name = 'MAD_OUS'
         predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths, gt = data_mad_ous_roi_predict(use_info_file, True)
         subject_dir_list = sorted(subject_dir_list, key=key_sort_files)
     else:
@@ -225,24 +227,25 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
                                                             scale=True)
                     cropped_resized_mask_img.save(predicted_mask_path)
     
-                elif dataset == 'mesa':
-                    predicted_mask_path = re.sub("MESA_set1_sorted/(MES0\d{6}).*/([0-9]{1,3}_)(sliceloc.*)", 'MESA_mask_original_2D/\g<1>/\g<2>mask_\g<3>', img_path)
-                    # print(predicted_mask_path)
-                    # exit
+                # elif dataset == 'mesa':
+                #     predicted_mask_path = re.sub("MESA_set1_sorted/(MES0\d{6}).*/([0-9]{1,3}_)(sliceloc.*)", 'MESA_mask_original_2D/\g<1>/\g<2>mask_\g<3>', img_path)
+                #     # print(predicted_mask_path)
+                #     # exit
                     
-                    # save txt file
-                    predicted_mask_txt_path = predicted_mask_path + '.txt'
-                    np.savetxt(predicted_mask_txt_path, cropped_resized_mask.reshape((cropped_resized_mask.shape[0],-1)), fmt='%.6f') #hope this is fine
+                #     # save txt file
+                #     predicted_mask_txt_path = predicted_mask_path + '.txt'
+                #     np.savetxt(predicted_mask_txt_path, cropped_resized_mask.reshape((cropped_resized_mask.shape[0],-1)), fmt='%.6f') #hope this is fine
     
-                    # save image
-                    cropped_resized_mask_img = array_to_img(cropped_resized_mask,
-                                                            data_format=None, 
-                                                            scale=True)
-                    cropped_resized_mask_img.save(predicted_mask_path + '.png')
+                #     # save image
+                #     cropped_resized_mask_img = array_to_img(cropped_resized_mask,
+                #                                             data_format=None, 
+                #                                             scale=True)
+                #     cropped_resized_mask_img.save(predicted_mask_path + '.png')
                     
-                elif dataset == 'mad_ous':
+                elif dataset in ['mesa','mad_ous']:
                     # predicted_mask_path = re.sub("MAD_OUS_sorted/([0-9]+)/cine.+/([0-9]{1,3}_)_sliceloc_(.*)", 'MAD_OUS_mask_original_2D/\g<1>/\g<2>mask_\g<3>', img_path)
-                    predicted_mask_path = img_path.replace('MAD_OUS_preprocess_original_2D', 'MAD_OUS_mask_original_2D')
+                    predicted_mask_path = img_path.replace(f'{dataset_name}_preprocess_original_2D', f'{dataset_name}_mask_original_2D')
+                    predicted_mask_path = predicted_mask_path.replace('sliceloc', 'mask')
                     # print(img_path)
                     # print(predicted_mask_path)
                     # exit
@@ -261,7 +264,7 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
 
 if __name__ == '__main__':
     # predict_roi_net()
-    # predict_roi_net('mesa')
-    predict_roi_net('mad_ous')
+    predict_roi_net('mesa')
+    # predict_roi_net('mad_ous')
 
 

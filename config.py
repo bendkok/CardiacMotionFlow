@@ -32,8 +32,8 @@ roi_net_initial_lr = 1e-4
 roi_net_decay_rate = 1.0
 roi_net_batch_size = 16
 roi_net_input_img_size = 128
-roi_net_input_img_size_mesa = 256
-roi_net_input_img_size_mad_ous = 352
+roi_net_input_img_size_mesa = 128
+roi_net_input_img_size_mad_ous = 128
 roi_net_epochs = 50
 
 

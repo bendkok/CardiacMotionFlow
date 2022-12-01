@@ -44,7 +44,7 @@ def data_mesa_roi_predict(use_info_file=True, delete=False):
     else:
         info_file = os.path.join(out_dir, 'MESA_info.xlsx') #todo: change to be function-input, with None as default
         excel_data = pd.read_excel(info_file)
-        data = pd.DataFrame(excel_data, columns=['Subject', 'Direcory', 'Filepath', 'ED', 'ES', 'Slices', 'Instants'])
+        data = pd.DataFrame(excel_data, columns=['Subject', 'Direcory', 'Filepath', 'ED', 'ES', 'Slices', 'Instants', 'GT'])
         
         all_subjects = data.Subject.to_numpy(dtype=str) #list of the subjects
         subject_dir_list = data.Direcory.to_numpy(dtype=str) #list of directory for each of the subjects
@@ -54,6 +54,7 @@ def data_mesa_roi_predict(use_info_file=True, delete=False):
         ed_list = data.ED.to_numpy(dtype=int)
         es_list = data.ES.to_numpy(dtype=int)
         slices_list = data.Slices.to_numpy(dtype=int)
+        gt = data.GT.to_numpy(dtype=int)
                  
     for s,subject in enumerate(all_subjects):
         
@@ -93,7 +94,8 @@ def data_mesa_roi_predict(use_info_file=True, delete=False):
             original_2D_paths.append(original_2D_path)
             
         else:
-            original_2D_path = original_2D_paths[s]
+            # original_2D_path = original_2D_paths[s]
+            original_2D_path = subject_dir_list[s].replace('MESA_set1_sorted', 'MESA_preprocess_original_2D')
             slices = slices_list[s]
             instants = instants_list[s]
             
@@ -140,7 +142,10 @@ def data_mesa_roi_predict(use_info_file=True, delete=False):
     # print(predict_gt_list)
     # print(subject_dir_list)
 
-    return predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths
+    try:
+        return predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths, gt
+    except:
+        return predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths
 
 
 

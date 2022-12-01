@@ -137,13 +137,15 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
         subject_info = [x.strip() for x in subject_info]
         subject_info = [ y.split()[0:2] + [float(z) for z in y.split()[2:]] for y in subject_info]
         
-    elif dataset in ['mesa', 'mad_ous']:
+    elif dataset in ['mesa', 'MESA', 'mad_ous', 'MAD_OUS']:
         # data_dir = "C:\\Users\\benda\\Documents\\Jobb_Simula\\MAD_motion\\MESA_set1_sorted\\{}" #config.acdc_data_dir
-        if dataset == 'mesa':
+        if dataset in ['mesa', 'MESA']:
+            dataset_name = 'MESA'
             out_dir = config.out_dir_mesa
             info_file = os.path.join(out_dir, 'MESA_info.xlsx')
-            predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths = data_mesa_roi_predict(use_info_file, delete=False)
-        elif dataset == 'mad_ous':
+            predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths, has_gt = data_mesa_roi_predict(use_info_file, delete=False)
+        elif dataset in ['mad_ous', 'MAD_OUS']:
+            dataset_name = 'MAD_OUS'
             out_dir = config.out_dir_mad_ous
             info_file = os.path.join(out_dir, 'MAD_OUS_info.xlsx')
             predict_img_list, predict_gt_list, subject_dir_list, original_2D_paths, has_gt = data_mad_ous_roi_predict(use_info_file, delete=False)
@@ -301,23 +303,23 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                             Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, s]), 3) * 50).astype('uint8')).save(s_t_label_file)
 
 
-    elif dataset in ['mesa', 'mad_ous']: #todo: make this cleaner
+    elif dataset in ['mesa', 'MESA', 'mad_ous', 'MAD_OUS']: #todo: make this cleaner
     
         clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
         for s,subject in enumerate(tqdm(all_subjects, file=sys.stdout)):
             with nostdout():
                 print(f"Subject: {subject}")
                 # subject_dir = subject_dir_list[s].replace('MAD_OUS_preprocess_original_2D', 'MAD_OUS_mask_original_2D')
-                subject_dir = os.path.join(out_dir, 'MAD_OUS_preprocess_original_2D', subject+'/').replace('\\', '/')
+                subject_dir = os.path.join(out_dir, f'{dataset_name}_preprocess_original_2D', subject+'/').replace('\\', '/')
                 # subject_dir_frames = os.listdir(subject_dir)
-                if dataset == 'mesa':
-                    dataset_name = 'MESA'
-                    sub_key = "MESA_set1_sorted/(MES0\d{6}).*/([0-9]{1,3}_)(sliceloc.*)"
-                    sub_rep = 'MESA_crop_2D/\g<1>/\g<2>crop_\g<3>'
-                elif dataset == 'mad_ous':
-                    dataset_name = 'MAD_OUS'
-                    sub_key = "MAD_OUS_sorted/([0-9]+)/cine.+/([0-9]{1,3}_)_sliceloc_(.*)"
-                    sub_rep = 'MAD_OUS_crop_2D/\g<1>/\g<2>crop_\g<3>'
+                # if dataset == 'mesa':
+                #     dataset_name = 'MESA'
+                #     sub_key = "MESA_set1_sorted/(MES0\d{6}).*/([0-9]{1,3}_)(sliceloc.*)"
+                #     sub_rep = 'MESA_crop_2D/\g<1>/\g<2>crop_\g<3>'
+                # elif dataset == 'mad_ous':
+                #     dataset_name = 'MAD_OUS'
+                #     sub_key = "MAD_OUS_sorted/([0-9]+)/cine.+/([0-9]{1,3}_)_sliceloc_(.*)"
+                #     sub_rep = 'MAD_OUS_crop_2D/\g<1>/\g<2>crop_\g<3>'
                 
                 subject_mask_original_dir = os.path.join(out_dir, f'{dataset_name}_mask_original_2D', subject)
                 crop_2D_path = os.path.join(out_dir, f'{dataset_name}_crop_2D', subject)
@@ -417,7 +419,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                             original_c_min:(original_c_max + 1), 
                             :, 
                             :]
-                crop_image_data = crop_image_data[::-1, ::-1, :, :]
+                crop_image_data = np.rot90(crop_image_data[::-1, ::-1, :, :], 3)
                 crop_image_file = os.path.join(out_dir, f'{dataset_name}_crop_2D', 'crop_{}_4d.nii.gz'.format(subject))
                 nib.save(nib.Nifti1Image(crop_image_data, np.eye(4)), crop_image_file)
                 
@@ -428,7 +430,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                 if subject in train_subjects:
                     print(f"Training subjects: {subject}.")
                     for i in [ed_instant+1, es_instant+1]:
-                        label_file = os.path.join(out_dir, 'MAD_OUS_gt', '{}_frame{}_gt.nii.gz'.format(subject,str(i).zfill(2)))
+                        label_file = os.path.join(out_dir, f'{dataset_name}_gt', '{}_frame{}_gt.nii.gz'.format(subject,str(i).zfill(2)))
                         label_load = nib.load(label_file)
                         label_data = label_load.get_data()
                         crop_label_data = np.zeros((roi_length + 2 * pixel_margin, 
@@ -441,7 +443,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                             original_c_min:(original_c_max + 1), 
                             :]
                         crop_label_data = crop_label_data[::-1, ::-1, :]
-                        crop_label_file = os.path.join(out_dir, 'MAD_OUS_crop_2D',
+                        crop_label_file = os.path.join(out_dir, f'{dataset_name}_crop_2D',
                             'crop_{}_frame{}_gt.nii.gz'.format(subject,str(i).zfill(2)))
                         nib.save(nib.Nifti1Image(crop_label_data, np.eye(4)), crop_label_file)
                 
@@ -466,20 +468,25 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                     for i in range(instants):
                         img_path = all_files[i+sl*instants]
                         img_path = img_path.replace('\\', '/')
-                        s_t_image_file = img_path.replace('MAD_OUS_preprocess_original_2D', 'MAD_OUS_crop_2D') #re.sub(sub_key, sub_rep, img_path)
-                        s_t_image_file = s_t_image_file.replace('_sliceloc_', 'crop_')
+                        s_t_image_file = img_path.replace(f'{dataset_name}_preprocess_original_2D', f'{dataset_name}_crop_2D') #re.sub(sub_key, sub_rep, img_path)
+                        s_t_image_file = s_t_image_file.replace('sliceloc_', 'crop_')
+                        s_t_image_file = s_t_image_file.replace('__', '_')
                         # img = clahe.apply((crop_image_data[:, :, sl, i]).astype('uint8'))
                         img = clahe.apply(np.rot90(crop_image_data[:, ::-1, sl, i], 3).astype('uint8'))
+                        # img = clahe.apply(crop_image_data[:, ::-1, sl, i].astype('uint8'))
                         # (np.rot90(crop_image_data[:, ::-1, sl, i], 3) * multiplier).astype('uint8')
                         Image.fromarray(img).save(s_t_image_file) # + '.png')
                         
                         if i in [ed_instant, es_instant] and subject in train_subjects:
-                            crop_label_file = os.path.join(out_dir, 'MAD_OUS_crop_2D', 
+                            crop_label_file = os.path.join(out_dir, f'{dataset_name}_crop_2D', 
                                 'crop_{}_frame{}_gt.nii.gz'.format(subject,str(i+1).zfill(2)))
                             crop_label_data = nib.load(crop_label_file).get_data()
                             s_t_label_file = s_t_image_file.replace('crop_', 'crop_gt_').replace('_gt_2D/', '_2D/')
                             # s_t_label_file = s_t_label_file
-                            Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, sl]), 3) * 50).astype('uint8')).save(s_t_label_file)
+                            if dataset in ['mesa']:
+                                Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, slices-1-sl]), 3) * 50).astype('uint8')).save(s_t_label_file)
+                            else:    
+                                Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, sl]), 3) * 50).astype('uint8')).save(s_t_label_file)
                 # Save cropped 2D labels
                 # if subject in train_subjects:
                 #     for s in range(slices):
@@ -496,8 +503,8 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
 
 if __name__ == '__main__':
     # crop_according_to_roi()
-    # crop_according_to_roi('mesa')
-    crop_according_to_roi('mad_ous')
+    crop_according_to_roi('mesa')
+    # crop_according_to_roi('mad_ous')
 
 
 
