@@ -14,7 +14,7 @@ sns.set_theme(style="dark")
 
 def doplot(m):
 
-    data = np.load('../acdc_info/acdc_data/patient146/predict_2D/flow2_04_{:02}.npy'.format(m))
+    data = np.load('../acdc_info/acdc_data/patient101/predict_2D/flow2_04_{:02}.npy'.format(m))
     
     # sha = data.shape
     # print(sha)

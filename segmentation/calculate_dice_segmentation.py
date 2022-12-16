@@ -37,6 +37,8 @@ def dice_coef2(y_true, y_pred, smooth=1.0):
     # return K.mean((2. * intersection + smooth) / (sum0 + smooth), axis=0)
     
     intersection = K.sum(y_true_f * y_pred_f)
+    # if np.sum(intersection) > 0:
+    #     print()
     # intersection = K.sum(y_true_f + y_pred_f)/2
     # if K.sum(y_true_f)==0 and K.sum(y_pred_f)==0:
     #     print("Sum = 0")
@@ -66,6 +68,8 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
     
     if dataset == 'acdc':
         
+        dataset_name = 'ACDC'
+        
         seq_segs_pre_train = []
         for f in range(1,6):
             seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_lvrv_segmentation_propagation_acdc(mode = 'val_predict', fold = f)
@@ -93,6 +97,8 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
         # print("Not implemeted.")
         # exit
         
+        dataset_name = 'MESA'
+        
         out_dir = config.out_dir_mesa
         info_file = os.path.join(out_dir, 'MESA_info.xlsx')
         excel_data = pd.read_excel(info_file)
@@ -118,6 +124,8 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
         print(subjects)
         
     elif dataset == 'mad_ous':
+        
+        dataset_name = 'MAD OUS'
         
         out_dir = config.out_dir_mad_ous
         info_file = os.path.join(out_dir, 'MAD_OUS_info.xlsx')
@@ -199,6 +207,7 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
                 n_segs += 1
                 dice = dice_coef2(segs_gt_im, segs_pre_im, smooth=smooth).numpy()
                 
+                #split the data into the different regions
                 reg1_gt = np.where(segs_gt_im == 50, np.ones_like(segs_gt_im)*50, np.zeros_like(segs_gt_im))
                 reg2_gt = np.where(segs_gt_im == 100, np.ones_like(segs_gt_im)*100, np.zeros_like(segs_gt_im))
                 reg3_gt = np.where(segs_gt_im == 150, np.ones_like(segs_gt_im)*150, np.zeros_like(segs_gt_im))
@@ -206,9 +215,17 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
                 reg2_pre = np.where(segs_pre_im == 100, np.ones_like(segs_pre_im)*100, np.zeros_like(segs_pre_im))
                 reg3_pre = np.where(segs_pre_im == 150, np.ones_like(segs_pre_im)*150, np.zeros_like(segs_pre_im))
                 
+                #if all three regions are predicted
+                # if np.max(reg3_pre) > 0:
                 dice1 = dice_coef2(reg1_gt, reg1_pre, smooth=smooth).numpy()
                 dice2 = dice_coef2(reg2_gt, reg2_pre, smooth=smooth).numpy()
                 dice3 = dice_coef2(reg3_gt, reg3_pre, smooth=smooth).numpy()
+                #if the rigth blood pool (?) isn't found
+                # else:
+                #     dice1 = dice_coef2(reg1_gt, reg3_pre, smooth=smooth).numpy()
+                #     dice2 = dice_coef2(reg2_gt, reg2_pre, smooth=smooth).numpy()
+                #     dice3 = dice_coef2(reg3_gt, reg1_pre, smooth=smooth).numpy()
+                
                 
                 if np.sum(segs_pre_im) == 0:
                     # print("Sum = 0.")
@@ -241,8 +258,9 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
     #     dice_scores_test.append(curr_dice)
     
     print(f'Number of failed segs: {n_zero} of {n_segs}, {int(100*n_zero/n_segs)}%.\n')
+    latex_tabel = ''
     
-    
+    # pd.options.display.float_format = "{:.3f}".format
     for i, list_n in enumerate([dice_scores_train, dice_scores_train1, dice_scores_train2, dice_scores_train3]):
         dice_flat = [item for sublist in list_n for item in sublist]
         dice_mean = [np.mean(sublist) for sublist in list_n]
@@ -251,17 +269,36 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
         df = pd.DataFrame(list_n, index=subjects).transpose()
         print()
         if i == 0:
-            print("All:")
+            region = "All regions"
         else:
-            print(f"Region {i}:")
+            region = f"Region {i}"
+        print(f'{region}:')
         des = df.describe()
+        des.loc['count'] = des.loc['count'].astype(int).astype(str)
+        des.iloc[1:] = des.iloc[1:].applymap('{:.4f}'.format)
         pd.set_option('display.max_columns', 12)
         pd.set_option('display.width', 1000)
         print(des)
-        path = config.out_dir_mad_ous
-        text_file = open(path + f"/dice_res_{dataset}_{i}.csv", "w")
+        
+        text_file = open(out_dir + f"/dice_res_{dataset}_{i}.csv", "w")
         n = text_file.write(str(des))
         text_file.close()
+        print()
+        
+        des = des.loc[['count', 'mean', 'std', 'min', 'max']]
+        
+        if dataset == 'mesa':
+            des.columns = des.columns.str.replace('MES', '')
+            des.columns = des.columns.str.replace(r'01$', '', regex=True)
+            des.columns = des.columns.str.replace(r'^00', '', regex=True)
+        extra = ' "MES00" and "01" have been removed from the beginning and end of the subject names.' if (dataset == 'mesa') else ""
+        latex_tabel += des.to_latex(bold_rows=True, label=f'tab:{dataset}_{i}', caption=f'Table of DICE-scores for the {dataset_name} dataset at {region.lower()}.{extra}', position='H', column_format='c'*(len(for_over)+3))
+        latex_tabel += '\n\n'
+    
+    print('\n' + latex_tabel)    
+    text_file = open(f"latexcode_dice_table_{dataset}.md", "wt")
+    n = text_file.write(latex_tabel)
+    text_file.close()
     
         
     return [dice_scores_train, dice_scores_train1, dice_scores_train2, dice_scores_train3], subjects #, dice_scores_test
@@ -270,8 +307,8 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1):
 if __name__ == '__main__':
     #I think dice_coef2 is the correct one
     # dice, subjects = calculate_dice_segmentation(smooth=.0)
-    dice, subjects = calculate_dice_segmentation('mad_ous', smooth=.0)
-    # dice, subjects = calculate_dice_segmentation('mesa', smooth=.0)
+    # dice, subjects = calculate_dice_segmentation('mad_ous', smooth=.0)
+    dice, subjects = calculate_dice_segmentation('mesa', smooth=.0)
     
     
     

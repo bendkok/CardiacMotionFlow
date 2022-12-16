@@ -111,7 +111,9 @@ def data_mesa_apparentflow(mode='all', fold = 1, use_data_file=True):
             start_slice = base_slice + int(round((apex_slice + 1 - base_slice) * excluded_slice_ratio))
             end_slice = apex_slice + 1 - int(round((apex_slice + 1 - base_slice) * excluded_slice_ratio))
         
-        img_names = sorted(os.listdir(subject_dir), key=key_sort_files)
+        # img_names = sorted(os.listdir(subject_dir), key=key_sort_files)
+        files = [cur for cur in os.listdir(subject_dir) if 'crop_gt' not in cur]
+        img_names = sorted(files, key=key_sort_files) #todo: check that this works
         all_files = [os.path.join(subject_dir, file) for file in img_names]
         # for sl in range(slices):
         #     for t in range(instants):

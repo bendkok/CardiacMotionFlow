@@ -152,6 +152,12 @@ def make_overlay_segmentation(dataset = 'mad_ous', display=False):
                 
                 pre = cv.imread(segs_pre[frame], 0)
                 gt  = cv.imread(segs_gt[frame], 0)
+                # pre = np.where(pre==150, pre, np.zeros_like(pre))
+                # gt  = np.where(gt ==150, gt,  np.zeros_like(gt) )
+                
+                #this is bit of a hack, but it makes the 'jet' color consistent
+                if np.max(pre) > 1:
+                    pre[0,0] = 150
                 masked = np.ma.masked_where(pre == 0, pre)
                 masked_gt = np.ma.masked_where(gt == 0, gt)
                 crop = cv.imread(segs_crop[frame], 0)
@@ -177,6 +183,9 @@ def make_overlay_segmentation(dataset = 'mad_ous', display=False):
                 else:
                     plt.clf()
                 
+                # if '41_predict_lvrv2_183.0_triggertime_10.0' in segs_pre[frame]:
+                #     print(41)
+                    
                 #crate overlay for gt
                 try:
                     plt.axis('off')

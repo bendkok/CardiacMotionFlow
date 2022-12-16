@@ -61,7 +61,7 @@ def preprocess_mad_ous(dataset='mad_ous'):
     
     print('There are {} subjects in total'.format(len(all_subjects)))
     
-    # clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
     
     # For each case
     for s,subject in enumerate(all_subjects):
@@ -82,6 +82,7 @@ def preprocess_mad_ous(dataset='mad_ous'):
         
         #finds the image shape
         subject_data0 = pydicom.read_file(os.path.join(subject_original_2D_dir, all_frames[0])).pixel_array.shape
+        print(f"Image dimensions: {subject_data0[0], subject_data0[1]}")
         data_np = np.zeros((subject_data0[0], subject_data0[1], slices, instants)) #where we'll store the images
         for t in range(instants):
             for sl in range(slices):
@@ -93,6 +94,7 @@ def preprocess_mad_ous(dataset='mad_ous'):
         
         #preprocessing
         max_pixel_value = data_np.max()
+        # if False:
         if max_pixel_value > 0:
             multiplier = 255.0 / max_pixel_value
         else:
@@ -125,6 +127,7 @@ def preprocess_mad_ous(dataset='mad_ous'):
                 for sl in range(slices):
                     s_t_image_file = os.path.join(subject_preprocess_dir, all_frames[sl*instants+t])+'.png'
                     img = (np.rot90(data_np[:, ::-1, sl, t], 1) * multiplier).astype('uint8')
+                    # img = clahe.apply((np.rot90(data_np[:, ::-1, sl, t], 1) * multiplier).astype('uint8'))
                     Image.fromarray(img).save(s_t_image_file.replace('__', '_'))
 
         # else:

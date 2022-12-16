@@ -57,12 +57,12 @@ def run_all_prediction(dataset='acdc',
     
     end_time = time()
     
-    print(f'\n\nTotal runtime: {end_time-start_time} sec.\n')
+    print(f'\n\nTotal runtime {dataset}: {end_time-start_time} sec.\n')
     
     
 
 if __name__ == '__main__':
     # run_all_prediction()
     # run_all_prediction('mad_ous', do_flow=True)
-    run_all_prediction('mesa', do_dice=True, do_flow=False)
+    run_all_prediction('mesa',  do_flow=True)
     
