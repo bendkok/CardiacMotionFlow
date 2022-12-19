@@ -305,7 +305,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
 
     elif dataset in ['mesa', 'MESA', 'mad_ous', 'MAD_OUS']: #todo: make this cleaner
     
-        clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        # clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
         for s,subject in enumerate(tqdm(all_subjects, file=sys.stdout)):
             with nostdout():
                 print(f"Subject: {subject}")
@@ -432,7 +432,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                     for i in [ed_instant+1, es_instant+1]:
                         label_file = os.path.join(out_dir, f'{dataset_name}_gt', '{}_frame{}_gt.nii.gz'.format(subject,str(i).zfill(2)))
                         label_load = nib.load(label_file)
-                        label_data = label_load.get_data()
+                        label_data = np.rot90(label_load.get_data()[::-1, ::-1, :], 3)
                         crop_label_data = np.zeros((roi_length + 2 * pixel_margin, 
                             roi_length + 2 * pixel_margin,
                             image_data.shape[2]))
@@ -442,7 +442,7 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                             label_data[original_r_min:(original_r_max + 1), 
                             original_c_min:(original_c_max + 1), 
                             :]
-                        crop_label_data = crop_label_data[::-1, ::-1, :]
+                        crop_label_data = crop_label_data[::-1, :, :]
                         crop_label_file = os.path.join(out_dir, f'{dataset_name}_crop_2D',
                             'crop_{}_frame{}_gt.nii.gz'.format(subject,str(i).zfill(2)))
                         nib.save(nib.Nifti1Image(crop_label_data, np.eye(4)), crop_label_file)
@@ -485,14 +485,19 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                             s_t_label_file = s_t_image_file.replace('crop_', 'crop_gt_').replace('_gt_2D/', '_2D/')
                             # s_t_label_file = s_t_label_file
                             if dataset in ['mesa']:
+                                #these two were different for some reason
                                 if subject == 'MES0001701':
-                                    Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, slices-1-sl]), 0) * 50).astype('uint8')).save(s_t_label_file)
+                                    Image.fromarray((np.rot90(change_array_values(crop_label_data[:, :, slices-1-sl]), 1) * 50).astype('uint8')).save(s_t_label_file)
                                 elif subject == 'MES0006701':
-                                    Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, sl]), 3) * 50).astype('uint8')).save(s_t_label_file)
+                                    # Image.fromarray((np.rot90(change_array_values(crop_label_data[:, :, sl]), 0) * 50).astype('uint8')).save(s_t_label_file)
+                                    Image.fromarray((change_array_values(crop_label_data[:, :, sl]) * 50).astype('uint8')).save(s_t_label_file)
                                 else:
-                                    Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, slices-1-sl]), 3) * 50).astype('uint8')).save(s_t_label_file)
+                                    # Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, slices-1-sl]), 3) * 50).astype('uint8')).save(s_t_label_file)
+                                    Image.fromarray((change_array_values(crop_label_data[:, :, slices-1-sl]) * 50).astype('uint8')).save(s_t_label_file)
                             else:    
-                                Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, sl]), 3) * 50).astype('uint8')).save(s_t_label_file)
+                                # Image.fromarray((np.rot90(change_array_values(crop_label_data[:, ::-1, sl]), 3) * 50).astype('uint8')).save(s_t_label_file)
+                                Image.fromarray((change_array_values(crop_label_data[:, :, sl]) * 50).astype('uint8')).save(s_t_label_file)
+                                
                 # Save cropped 2D labels
                 # if subject in train_subjects:
                 #     for s in range(slices):

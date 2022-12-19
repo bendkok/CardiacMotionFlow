@@ -31,6 +31,7 @@ share/python-wheels/
 *.gz
 MANIFEST
 *.md
+*.csv
 
 *info.cfg
 *.h5
