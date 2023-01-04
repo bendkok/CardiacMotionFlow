@@ -132,4 +132,5 @@ def data_lvrv_segmentation_propagation_acdc(mode='all', fold = 1):
 
 if __name__ == '__main__':
     # data_lvrv_segmentation_propagation_acdc()
-    data_lvrv_segmentation_propagation_acdc("predict")
+    # data_lvrv_segmentation_propagation_acdc("predict")
+    data_lvrv_segmentation_propagation_acdc("val_predict", fold=0)

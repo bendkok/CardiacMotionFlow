@@ -48,16 +48,19 @@ import config
 
 
 
-def predict_apparentflow_net(dataset = 'acdc'):
+def predict_apparentflow_net(dataset = 'acdc', fold = 0):
 
     code_path = config.code_dir
     
-    fold = 0 #int(sys.argv[1])
+    # fold = 0 #int(sys.argv[1])
     print('fold = {}'.format(fold))
     if fold == 0:
         mode = 'predict'
     elif fold in range(1,6):
         mode = 'val'
+    elif fold == 7:
+        mode = 'all'
+        fold = 0
     else:
         print('Incorrect fold')
 
@@ -276,8 +279,8 @@ def predict_apparentflow_net(dataset = 'acdc'):
 
 
 if __name__ == '__main__':
-    # predict_apparentflow_net()
-    predict_apparentflow_net('mesa')
+    predict_apparentflow_net(fold=7)
+    # predict_apparentflow_net('mesa')
     # predict_apparentflow_net('mad_ous')
 
 

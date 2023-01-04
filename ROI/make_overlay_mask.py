@@ -6,6 +6,7 @@ Created on Mon Dec 19 12:29:57 2022
 """
 
 import matplotlib.pyplot as plt 
+from matplotlib.patches import Rectangle
 import cv2 as cv
 import numpy as np
 import pandas as pd
@@ -13,6 +14,7 @@ import os
 import re
 from tqdm import tqdm
 import sys
+import csv
 
 
 from ROI.data_roi_predict import data_roi_predict
@@ -56,7 +58,7 @@ def key_sort_files(value):
 
 
 
-def make_overlay_segmentation(dataset = 'mad_ous', display=False):
+def make_overlay_mask(dataset = 'mad_ous', display=False):
     
     fold = 0 #int(sys.argv[1])
     # print('fold = {}'.format(fold))
@@ -72,6 +74,8 @@ def make_overlay_segmentation(dataset = 'mad_ous', display=False):
         predict_img_list, predict_gt_list = data_roi_predict()
         predict_mask_list = [file_name.replace('original_2D', 'mask_original_2D', 2) for file_name in predict_img_list]
         overlay_list = [file_name.replace('original_2D', 'mask_overlay', 2) for file_name in predict_img_list]
+        
+        path = './acdc_info'
         
     elif dataset == 'mesa':
         
@@ -96,7 +100,28 @@ def make_overlay_segmentation(dataset = 'mad_ous', display=False):
     else:
         print("Unkown dataset.")
         raise 
-
+        
+    if dataset != 'acdc':
+        try:
+            with open(f"../../MAD_motion/{dataset.upper()}/cropped_area_{dataset}.csv", newline='') as csvfile:
+                spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+                areas = []
+                for row in spamreader:
+                    areas.append(np.array(row[0].split(','), dtype=int))
+        except:
+            with open(f"../MAD_motion/{dataset.upper()}/cropped_area_{dataset}.csv", newline='') as csvfile:
+                spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+                areas = []
+                for row in spamreader:
+                    areas.append(np.array(row[0].split(','), dtype=int))
+        areas = np.array(areas)
+        
+        # print([subject_dir_list[0].replace('_sorted', '_preprocess_original_2D') in f for f in predict_img_list])
+        b = []
+        for i in range(len(subject_dir_list)):
+            b += [i for s in predict_img_list if subject_dir_list[i].replace('_set1_sorted', '_preprocess_original_2D').replace('_sorted', '_preprocess_original_2D') in s]
+    
+    # print(b)
     print(f'\nNumber of masks: {len(predict_mask_list)}.')
     
     for i,file in enumerate(tqdm(predict_img_list, file=sys.stdout)):
@@ -106,17 +131,24 @@ def make_overlay_segmentation(dataset = 'mad_ous', display=False):
             mask_file = predict_mask_list[i]
             overlay_file = overlay_list[i]
             
+            
             os.makedirs(os.path.dirname(overlay_file), exist_ok=True)
                 
-            img = cv.imread(img_file, 0)
-            mask  = cv.imread(mask_file, 0)
+            img  = np.rot90(cv.imread(img_file,  0)[::-1, ::-1], 3)[::-1, :]
+            mask = np.rot90(cv.imread(mask_file, 0)[::-1, ::-1], 3)[::-1, :]
 
             masked = np.ma.masked_where(mask == 0, mask)
-            
+            # crop_image_data
             #creates an overlayed image for prediction
             plt.axis('off')
             plt.imshow(img,'gray', interpolation='none')
-            plt.imshow(masked, 'BrBG', interpolation='none', alpha=0.5)
+            plt.imshow(masked, 'Purples_r', interpolation='none', alpha=0.35)
+            # plt.plot([ar[0], ar[2]+1], [ar[0], ar[3]+1])
+            if dataset != 'acdc':
+                ar = areas[b[i]]
+                box = [[ar[0], ar[2]+1], [ar[0], ar[3]+1], [ar[1], ar[3]+1], [ar[1], ar[2]+1], [ar[0], ar[2]+1]]
+                # plt.gca().add_patch(Rectangle((ar[0], ar[2]+1),ar[1]-ar[0],ar[3]-ar[2],linewidth=1,edgecolor='orange',facecolor='none'))
+                plt.plot(*zip(*box), color='orange')
             plt.savefig(overlay_file, bbox_inches='tight', pad_inches=0)
             if display:
                 plt.show()                
@@ -148,9 +180,9 @@ def make_overlay_segmentation(dataset = 'mad_ous', display=False):
             
 if __name__ == '__main__':
     
-    make_overlay_segmentation(dataset = 'mad_ous', display=True )
-    make_overlay_segmentation(dataset = 'mesa',    display=True )
-    make_overlay_segmentation(dataset = 'acdc',    display=False)
+    make_overlay_mask(dataset = 'mad_ous', display=True )
+    make_overlay_mask(dataset = 'mesa',    display=True )
+    make_overlay_mask(dataset = 'acdc',    display=False)
     
 
 

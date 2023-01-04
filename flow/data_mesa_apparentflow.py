@@ -19,7 +19,7 @@ def key_sort_files(value):
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
-def data_mesa_apparentflow(mode='all', fold = 1, use_data_file=True):
+def data_mesa_apparentflow(mode='all', fold = 0, use_data_file=True):
 
     data_dir = "C:/Users/benda/Documents/Jobb_Simula/MAD_motion/MESA/MESA_crop_2D/{}" #config.acdc_data_dir
     code_dir = config.code_dir
@@ -154,12 +154,15 @@ def data_mesa_apparentflow(mode='all', fold = 1, use_data_file=True):
         #         img_list0.append(img0)
         #         img_list1.append(img1)
             
-
+    
+    seg_list0 = [re.sub('\\\\(\d{1,3})_crop_', '/\\1_crop_gt_', name) for name in img_list0]
+    seg_list1 = [re.sub('\\\\(\d{1,3})_crop_', '/\\1_crop_gt_', name) for name in img_list1]
+    
     print('pair count = {}'.format(len(img_list0)) )
-    print('segmented_pair_count = {}'.format(segmented_pair_count), 'unsegmented_pair_count = {}'.format(unsegmented_pair_count))
+    # print('segmented_pair_count = {}'.format(segmented_pair_count), 'unsegmented_pair_count = {}'.format(unsegmented_pair_count))
 
-    # return img_list0, img_list1, seg_list0, seg_list1
-    return img_list0, img_list1, img_list0, img_list1
+    return img_list0, img_list1, seg_list0, seg_list1
+    # return img_list0, img_list1, img_list0, img_list1
 
 
 if __name__ == '__main__':

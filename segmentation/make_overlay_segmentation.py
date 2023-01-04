@@ -203,9 +203,9 @@ def make_overlay_segmentation(dataset = 'mad_ous', display=False):
             
 if __name__ == '__main__':
     
-    # make_overlay_segmentation(dataset = 'mad_ous', display=True)
+    make_overlay_segmentation(dataset = 'mad_ous', display=False)
     make_overlay_segmentation(dataset = 'mesa',    display=False)
-    # make_overlay_segmentation(dataset = 'acdc',    display=False)
+    make_overlay_segmentation(dataset = 'acdc',    display=False)
     
 
 

@@ -24,24 +24,10 @@ from segmentation.data_lvrv_segmentation_propagation_mad_ous import data_lvrv_se
 
 
 def dice_coef2(y_true, y_pred, smooth=1.0):
-    #y_true_f = K.flatten(y_true)
     y_true_f = tf.where(y_true > 0.5, K.ones_like(y_true), K.zeros_like(y_true))
     y_pred_f = tf.where(y_pred > 0.5, K.ones_like(y_pred), K.zeros_like(y_pred))
-    # y_true = tf.where(y_true > 0.5, K.ones_like(y_true, dtype=np.int32), K.zeros_like(y_true, dtype=np.int32))
-    #y_pred_f = K.flatten(y_pred)
-    
-    # intersection = K.sum(y_true * y_pred)
-    # sum0 = K.sum(y_true) + K.sum(y_pred,)
-    # # intersection = K.sum(y_true * y_pred)
-    # # sum0 = K.sum(y_true, axis=[1,2]) + K.sum(y_pred)
-    # return K.mean((2. * intersection + smooth) / (sum0 + smooth), axis=0)
     
     intersection = K.sum(y_true_f * y_pred_f)
-    # if np.sum(intersection) > 0:
-    #     print()
-    # intersection = K.sum(y_true_f + y_pred_f)/2
-    # if K.sum(y_true_f)==0 and K.sum(y_pred_f)==0:
-    #     print("Sum = 0")
     return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
 
 
@@ -76,11 +62,12 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1, do_latex_table=True)
             seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_lvrv_segmentation_propagation_acdc(mode = 'val_predict', fold = f)
             seq_segs_pre_train += [seq_segs[se] + seq_segs[se+1] for se in range(len(seq_segs))[::2]]
         
-        # seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_lvrv_segmentation_propagation_acdc(mode = 'predict')
-        # seq_segs_pre_test = [seq_segs[se] + seq_segs[se+1] for se in range(len(seq_segs))[::2]]
+        seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_lvrv_segmentation_propagation_acdc(mode = 'predict')
+        seq_segs_pre_test = [seq_segs[se] + seq_segs[se+1] for se in range(len(seq_segs))[::2]]
         
         seq_segs_pre_train = np.sort(seq_segs_pre_train)
-        # seq_segs_pre_test = np.sort(seq_segs_pre_test)
+        seq_segs_pre_test = np.sort(seq_segs_pre_test)
+        seq_segs_pre_train_fl = seq_segs_pre_train
         
         seq_segs_gt_train = [[a.replace('predict_lvrv2_', 'crop_2D_gt_', 1) for a in b ] for b in seq_segs_pre_train]
         seq_segs_gt_train = [[a.replace('predict_2D', 'crop_2D', 1) for a in b ] for b in seq_segs_gt_train]
@@ -94,10 +81,7 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1, do_latex_table=True)
     
         
     elif dataset == 'mesa':
-        # seq_context_imgs, seq_context_segs, seq_imgs, seq_segs = data_lvrv_segmentation_propagation_mesa(mode = mode, fold = fold)
-        # print("Not implemeted.")
-        # exit
-        
+
         dataset_name = 'MESA'
         
         out_dir = config.out_dir_mesa
@@ -112,7 +96,8 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1, do_latex_table=True)
         
         seq_context_imgs, seq_context_segs, seq_imgs, seq_segs0, gt = data_lvrv_segmentation_propagation_mesa(mode = 'predict', fold = fold)
         
-        seq_segs_pre_train = [sorted(seq_segs0[se][ind[se]:ind[se+1]] + seq_segs0[se+1][ind[se]:ind[se+1]], key=key_sort_files) for se in range(len(seq_segs0))[::2]]
+        seq_segs_pre_train_fl = [sorted(seq_segs0[se][ind[se]:ind[se+1]] + seq_segs0[se+1][ind[se]:ind[se+1]], key=key_sort_files) for se in range(len(seq_segs0))[::2]]
+        seq_segs_pre_train = [sorted(seq_segs0[se] + seq_segs0[se+1], key=key_sort_files) for se in range(len(seq_segs0))[::2]]
         
         # seq_segs_gt_train = seq_segs1 #todo: test
         seq_segs_gt_train = [[a.replace('_predict_lvrv2_', '_crop_gt_', 1) for a in b ] for b in seq_segs_pre_train]
@@ -142,7 +127,9 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1, do_latex_table=True)
         # seq_context_imgs, seq_context_segs, seq_imgs, seq_segs1, gt = data_mad_ous_lvrv_segmentation_propagation_acdc(mode = 'all', fold = fold)
         
         # seq_segs_pre_train = [item for sublist in seq_segs0 for item in sublist]
-        seq_segs_pre_train = [sorted(seq_segs0[se][ind[se]:ind[se+1]] + seq_segs0[se+1][ind[se]:ind[se+1]], key=key_sort_files) for se in range(len(seq_segs0))[::2]]
+        # seq_segs_pre_train = [sorted(seq_segs0[se][ind[se]:ind[se+1]] + seq_segs0[se+1][ind[se]:ind[se+1]], key=key_sort_files) for se in range(len(seq_segs0))[::2]]
+        seq_segs_pre_train_fl = [sorted(seq_segs0[se][ind[se]:ind[se+1]] + seq_segs0[se+1][ind[se]:ind[se+1]], key=key_sort_files) for se in range(len(seq_segs0))[::2]]
+        seq_segs_pre_train = [sorted(seq_segs0[se] + seq_segs0[se+1], key=key_sort_files) for se in range(len(seq_segs0))[::2]]
         # seq_segs_pre_train = np.sort(seq_segs_pre_train)
         
         # seq_segs_gt_train = seq_segs1 #todo: test
@@ -179,6 +166,8 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1, do_latex_table=True)
     n_zero = 0
     n_segs = 0
     n_zero_3 = 0
+    n_zero_fl = 0
+    n_segs_fl = 0
     
     for i in for_over:    
         segs_pre = seq_segs_pre_train[i]
@@ -194,20 +183,17 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1, do_latex_table=True)
         curr_dice_3 = []
         for frame in range(len(segs_pre)):
             
-        
             segs_pre_im = np.array(iio.imread(segs_pre[frame]), dtype=float)
             segs_gt_im = np.array(iio.imread(segs_gt[frame]), dtype=float)
             
-            # plt.plot(segs_pre_im[5])
-            # plt.show()
-            
-            # print(f'{i}, {frame}: segs_pre_im: {K.sum(segs_pre_im)}') if K.sum(segs_pre_im) == 0 else False
-            # print(f'{i}, {frame}: segs_gt_im: {K.sum(segs_gt_im)}') if K.sum(segs_gt_im) == 0 else False
-            
             n_segs += 1
+            if segs_pre[frame] in seq_segs_pre_train_fl[i]:
+                n_segs_fl += 1
+                if np.max(segs_pre_im) == 0:
+                    n_zero_fl += 1
+            
+            #if there is no prediction
             if np.max(segs_pre_im) == 0:
-                # print("Sum = 0.")
-                # dice = np.nan
                 n_zero += 1
             else:
                 #skip the frames where we don't have a ground truth 
@@ -228,7 +214,6 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1, do_latex_table=True)
                     dice2 = dice_coef2(reg2_gt, reg2_pre, smooth=smooth).numpy()
                     dice3 = dice_coef2(reg3_gt, reg3_pre, smooth=smooth).numpy()
                 
-                    # if not np.isnan(dice):
                     curr_dice.append(dice)
                     curr_dice_1.append(dice1)
                     curr_dice_2.append(dice2)
@@ -244,10 +229,12 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1, do_latex_table=True)
         dice_scores_train2.append(curr_dice_2)
         dice_scores_train3.append(curr_dice_3)
         
+    
+        
     # for i in range(predict_sequence_test):    
     #     segs_pre = seq_segs_pre_test[i]
     #     #the segs_gt is not grouped 
-    #     segs_gt = seq_segs_gt_test[i]
+    #     # segs_gt = seq_segs_gt_test[i]
         
     #     if len(segs_pre) != len(segs_gt):
     #         print(f"Not same length! {i}")
@@ -261,8 +248,31 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1, do_latex_table=True)
     # print(f'\nNumber of train subjects: {predict_sequence_train}.')
     final_str = f'Number of subjects: {predict_sequence_train}.\n'
     final_str += f'Number of failed segs: {n_zero} of {n_segs}, {int(100*n_zero/n_segs)}%.\n'
+    final_str += f'Number of failed middle segs: {n_zero_fl} of {n_segs_fl}, {int(100*n_zero_fl/n_segs_fl)}%.\n'
     #of the number of successful segmentations, how many failed to find region 3
     final_str += f'Number of failed region 3 segs: {n_zero_3} of {n_segs-n_zero}, {int(100*n_zero_3/(n_segs-n_zero))}%.\n\n'
+    
+    if dataset == 'acdc':
+        n_segs_test   = 0
+        n_zero_test   = 0
+        n_zero_3_test = 0
+        for i in range(len(seq_segs_pre_test)):
+            segs_pre = seq_segs_pre_test[i]
+            for frame in range(len(segs_pre)):
+                segs_pre_im = np.array(iio.imread(segs_pre[frame]), dtype=float)
+                n_segs_test += 1
+                
+                #if there is no prediction
+                if np.max(segs_pre_im) == 0:
+                    n_zero_test += 1
+                elif np.max(segs_pre_im) < 150:
+                    n_zero_3_test += 1
+                    
+        final_str += f'Number of test subjects: {len(seq_segs_pre_test)}.\n'
+        final_str += f'Number of failed test segs: {n_zero_test} of {n_segs_test}, {int(100*n_zero_test/n_segs_test)}%.\n'
+        # final_str += f'Number of failed middle segs: {n_zero_fl} of {n_segs_fl}, {int(100*n_zero_fl/n_segs_fl)}%.\n'
+        #of the number of successful segmentations, how many failed to find region 3
+        final_str += f'Number of failed test region 3 segs: {n_zero_3_test} of {n_segs_test-n_zero_test}, {int(100*n_zero_3_test/(n_segs_test-n_zero_test))}%.\n\n'
     
     latex_tabel = ''
     # pd.options.display.float_format = "{:.3f}".format
@@ -276,17 +286,17 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1, do_latex_table=True)
         if i == 0:
             region = "All regions"
         elif i == 1:
-            region = "The left ventricle"
+            region = "The left blood pool"
         elif i == 2:
-            region = "The wall"
+            region = "The LV wall"
         elif i == 3:
-            region = "The right ventricle"
+            region = "The rigth blood pool"
         # else:
         #     region = f"Region {i}"
         print(f'{region}:')
         des = df.describe()
         des.loc['count'] = des.loc['count'].astype(int).astype(str)
-        des.iloc[1:] = des.iloc[1:].applymap('{:.4f}'.format)
+        des.iloc[1:] = des.iloc[1:].applymap('{:.2f}'.format)
         pd.set_option('display.max_columns', 12)
         pd.set_option('display.width', 1000)
         print(des)
@@ -303,8 +313,10 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1, do_latex_table=True)
                 des.columns = des.columns.str.replace('MES', '')
                 des.columns = des.columns.str.replace(r'01$', '', regex=True)
                 des.columns = des.columns.str.replace(r'^00', '', regex=True)
-            extra = ' "MES00" and "01" have been removed from the beginning and end of the subject names.' if (dataset == 'mesa') else ""
-            latex_tabel += des.to_latex(bold_rows=True, label=f'tab:{dataset}_{i}', caption=f'Table of DICE-scores for the {dataset_name} dataset at {region.lower()}.{extra}', position='H', column_format='c'*(len(for_over)+3))
+            extra = ' "MES00" and "01" have been removed from the beginning and end of the subject names respectively.' if (dataset == 'mesa') else ""
+            if np.isnan(np.array(des.values, dtype=float)).any():
+                extra += ' The "nan" values comes if there are too few predictions.'
+            latex_tabel += des.to_latex(bold_rows=True, label=f'tab:{dataset}_{i}', caption=f'Table of DICE-scores for the {dataset_name} dataset at {region.lower()}. "All mean" are the average of the mean values for each patient, while "All" are all the frames in total.{extra}', position='H', column_format='c'*(len(for_over)+3))
             latex_tabel += '\n'
     
     if do_latex_table:
@@ -321,9 +333,9 @@ def calculate_dice_segmentation(dataset = 'acdc', smooth=1, do_latex_table=True)
 
 if __name__ == '__main__':
     #I think dice_coef2 is the correct one
-    # dice, subjects = calculate_dice_segmentation(smooth=.0, do_latex_table=False)
-    dice, subjects = calculate_dice_segmentation('mad_ous', smooth=.0)
-    dice, subjects = calculate_dice_segmentation('mesa', smooth=.0)
+    dice, subjects = calculate_dice_segmentation(smooth=.0, do_latex_table=False)
+    # dice, subjects = calculate_dice_segmentation('mad_ous', smooth=.0)
+    # dice, subjects = calculate_dice_segmentation('mesa', smooth=.0)
     
     
     

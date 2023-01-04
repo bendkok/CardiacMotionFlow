@@ -19,7 +19,7 @@ from time import time
 def run_all_prediction(dataset='acdc',
                        do_pre   = True,
                        do_roi   = True,
-                       do_mcomp =True,
+                       do_mcomp = True,
                        do_crop  = True,
                        do_flow  = True,
                        do_seg   = True,
@@ -70,5 +70,5 @@ def run_all_prediction(dataset='acdc',
 if __name__ == '__main__':
     # run_all_prediction()
     run_all_prediction('mad_ous', do_flow=False, do_pre=False)
-    run_all_prediction('mesa',  do_flow=False, do_pre=False)
+    run_all_prediction('mesa',    do_flow=False, do_pre=False)
     

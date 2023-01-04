@@ -118,8 +118,9 @@ def data_apparentflow(mode='all', fold = 1):
 
 if __name__ == '__main__':
     
-    res = data_apparentflow(mode='predict')
-    print([len(r) for r in res])
+    res = data_apparentflow(mode='val', fold=1)
+    # res = data_apparentflow(mode='predict')
+    # print([len(r) for r in res])
     # print(len(res[0]), len(res[1]))
     
     

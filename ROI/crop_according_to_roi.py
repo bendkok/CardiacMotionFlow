@@ -304,7 +304,8 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
 
 
     elif dataset in ['mesa', 'MESA', 'mad_ous', 'MAD_OUS']: #todo: make this cleaner
-    
+        
+        areas = ''
         # clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
         for s,subject in enumerate(tqdm(all_subjects, file=sys.stdout)):
             with nostdout():
@@ -423,7 +424,9 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                 crop_image_file = os.path.join(out_dir, f'{dataset_name}_crop_2D', 'crop_{}_4d.nii.gz'.format(subject))
                 nib.save(nib.Nifti1Image(crop_image_data, np.eye(4)), crop_image_file)
                 
-                
+                areas += f'{original_r_min},{original_r_max},{original_c_min},{original_c_max}'+'\n'
+                #original_r_min:(original_r_max + 1)
+                #original_c_min:(original_c_max + 1)
                 
                 
                 # Crop the original labels
@@ -503,7 +506,10 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
                 #     for s in range(slices):
                 #         # print(f"Training subjects: {subject}.")
                 #         for t in [ed_instant, es_instant]:
-                            
+        #
+        text_file = open(f"../MAD_motion/{dataset.upper()}/cropped_area_{dataset}.csv", "wt")
+        n = text_file.write(areas)
+        text_file.close()                    
             
         
     
@@ -513,8 +519,8 @@ def crop_according_to_roi(dataset='acdc', use_info_file=True):
 
 
 if __name__ == '__main__':
-    # crop_according_to_roi()
-    crop_according_to_roi('mesa')
+    crop_according_to_roi()
+    # crop_according_to_roi('mesa')
     # crop_according_to_roi('mad_ous')
 
 

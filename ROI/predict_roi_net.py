@@ -165,7 +165,8 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
 
     print('Start prediction')
     print('There will be {} batches with batch-size {}'.format(int(math.ceil(float(predict_sample) / batch_size)), batch_size) )
-
+    
+    sizes_ = []
     for i in tqdm(range(int(math.ceil(float(predict_sample) / batch_size)) ), file=sys.stdout):
         with nostdout():
             print('batch {}'.format(i) )
@@ -179,7 +180,8 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
                                           batch_size=batch_size, 
                                           verbose=0)
             binarized_predict_masks = np.where(predict_masks >= 0.5, 1.0, 0.0)
-    
+            
+            sizes = []
             for j in range(len(img_list_batch)):
                 img_path = img_list_batch[j]
                 # print(img_path)
@@ -198,7 +200,9 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
                     h = img_size[0]
                     w = img_size[1]
                 size = max(h, w)
-    
+                if j == 0:
+                    sizes.append([h,w])
+                
                 # reshape and crop the predicted mask to the original size
                 # print(binarized_predict_masks.shape)
                 # print(binarized_predict_masks[j,:size,:size].shape)
@@ -260,11 +264,13 @@ def predict_roi_net(dataset='acdc', use_info_file=True):
                                                             scale=True)
                     cropped_resized_mask_img.save(predicted_mask_path)
 
-
+            sizes_.append(sizes)
+            
+    print(sizes_)
 
 if __name__ == '__main__':
-    # predict_roi_net()
-    predict_roi_net('mesa')
+    predict_roi_net()
+    # predict_roi_net('mesa')
     # predict_roi_net('mad_ous')
 
 

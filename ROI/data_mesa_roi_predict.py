@@ -125,7 +125,8 @@ def data_mesa_roi_predict(use_info_file=True, delete=False):
         #Here they tried to get only the data for ED. MESA dosen't record when that is, so I've just used 0 instead
         
         # for s in range(slices):
-        for sl in range(int(round(slices * 0.1 + 0.001)), int(round(slices * 0.5 + 0.001))): #they use this long thing to decide which slices to use, not sure why
+        # for sl in range(int(round(slices * 0.1 + 0.001)), int(round(slices * 0.5 + 0.001))): #they use this long thing to decide which slices to use, not sure why
+        for sl in range(int(round(slices * 0.3 + 0.001)), int(round(slices * 0.7 + 0.001))): #they use this long thing to decide which slices to use, not sure why
             for t in used_instants: #there's only one element here, but that might change in the future
                 # print('Numbers: {:3.0f} {:2.0f} {:2.0f}'.format(t+sl*instants, t, sl))
                 s_t_image_file = os.path.join(original_2D_path, all_frames[sl*instants+t]) #select the desired frame
